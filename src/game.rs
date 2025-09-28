@@ -1,3 +1,5 @@
+use std::fmt::Error;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CellState {
     Empty,
@@ -50,22 +52,21 @@ impl Tile {
 
     /// Rotate the tile according to provided TileRotation
     pub fn rotate(&mut self, rotation: TileRotation) {
-        let mut new_cells = self.cells;
+        let original_cells = self.cells;
         if rotation == TileRotation::Clockwise {
             for r in 0..3 {
                 for c in 0..3 {
-                    new_cells[c][2 - r] = self.cells[r][c];
+                    self.cells[c][2 - r] = original_cells[r][c];
                 }
             }
         } else if rotation == TileRotation::CounterClockwise {
             for r in 0..3 {
                 for c in 0..3 {
-                    new_cells[2 - c][r] = self.cells[r][c];
+                    self.cells[2 - c][r] = original_cells[r][c];
                 }
             }
             
         }
-        self.cells = new_cells;
     }
 }
 
@@ -80,7 +81,7 @@ pub struct Placement {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Rotatation {
+pub struct Rotation {
     tile_row: usize,
     tile_column: usize,
     rotation_orientation: TileRotation,
@@ -117,7 +118,7 @@ impl Board {
     /// Rotate a specific tile (quadrant)
     pub fn rotate_tile(
         &mut self,
-        rotation_action: Rotatation
+        rotation_action: Rotation
     ) -> Result<(), &'static str> {
         if rotation_action.tile_row >= 2 || rotation_action.tile_column >= 2 {
             return Err("Invalid tile position");
@@ -198,7 +199,7 @@ pub enum TurnState {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PlayerAction {
     Placement(Placement),
-    Rotatation(Rotatation),
+    Rotation(Rotation),
     Validate,
 }
 
@@ -239,7 +240,7 @@ impl Game {
         if self.board.check_winner(CellState::White) {
             self.winner = CellState::White;
             return;
-        } else if self.board.check_winner(CellState::White) {
+        } else if self.board.check_winner(CellState::Black) {
             self.winner = CellState::Black;
             return;
         }
@@ -248,7 +249,8 @@ impl Game {
             TurnState::WaitingForPlacement => {},
             TurnState::WaitingForRotation => {},
             TurnState::PlacementDone => {
-                self.state = TurnState::WaitingForRotation
+                self.state = TurnState::WaitingForRotation;
+                self.last_action = PlayerAction::Validate;
             }
             TurnState::RotationDone => {
                 let next_player = match self.current_player {
@@ -257,31 +259,34 @@ impl Game {
                     CellState::Empty => CellState::Empty,                    
                 };
                 self.current_player = next_player;
-                self.state = TurnState::WaitingForPlacement
+                self.state = TurnState::WaitingForPlacement;
+                self.last_action = PlayerAction::Validate;
             }
         }
     }
 
     pub fn cancel_action(&mut self) {
-        if self.state == TurnState::PlacementDone {
-            if let PlayerAction::Placement(ref last_placement) = self.last_action {
-                self.board.place(last_placement.clone(), CellState::Empty).unwrap();
+        match &self.last_action {
+            PlayerAction::Placement(last_placement) if self.state == TurnState::PlacementDone => {
+                if let Err(e) = self.board.place(last_placement.clone(), CellState::Empty) {
+                    eprintln!("Error canceling previous placement: {}", e);
+                }
             }
-        } else if self.state == TurnState::RotationDone {
-            if let PlayerAction::Rotatation(ref last_rotation) = self.last_action {
+            PlayerAction::Rotation(last_rotation) if self.state == TurnState::RotationDone => {
                 let opposite_orientation = match last_rotation.rotation_orientation {
                     TileRotation::CounterClockwise => TileRotation::Clockwise,
                     TileRotation::Clockwise => TileRotation::CounterClockwise,
-                    
                 };
-                let opposite_rotation = Rotatation {
+                let opposite_rotation = Rotation {
                     tile_row: last_rotation.tile_row,
                     tile_column: last_rotation.tile_column,
                     rotation_orientation: opposite_orientation,
-
                 };
-                self.board.rotate_tile(opposite_rotation).unwrap();
+                if let Err(e) = self.board.rotate_tile(opposite_rotation) {
+                    eprintln!("Error canceling previous rotation: {}", e);
+                }
             }
+            _ => {} // No action needed for other states
         }
     }
 }
