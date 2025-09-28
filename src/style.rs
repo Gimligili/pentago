@@ -76,5 +76,5 @@ pub async fn gen_skin() -> Skin {
             ..root_ui().default_skin()
         }
     };
-    return skin;
+    skin
 }

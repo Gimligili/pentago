@@ -1,9 +1,25 @@
 use std::fs::File;
 use std::io::BufReader;
 use std::convert::TryInto;
+use macroquad::prelude::*;
 use crate::miniquad::conf::Icon;
 use ico::IconDir;
 use image::imageops::FilterType;
+use crate::position;
+
+pub fn window_conf() -> Conf {
+
+    let icon = load_icon("ui_assets/pentago.ico").expect("failed to load icon.ico");
+    Conf { 
+        window_title: "Pentago".to_owned(), 
+        window_width: position::WIDTH as i32,
+        window_height: position::HEIGHT as i32,
+        fullscreen: false, 
+        window_resizable: false, 
+        icon: Some(icon), 
+        ..Default::default()
+    }
+}
 
 pub fn load_icon(path: &str) -> Result<Icon, Box<dyn std::error::Error>> {
     let file = File::open(path)?;

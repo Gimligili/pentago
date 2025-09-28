@@ -1,24 +1,15 @@
 use macroquad::prelude::*;
 use macroquad::ui::{hash, root_ui, widgets};
-mod icon_loader;
+mod init;
 mod custom_colors;
 mod style;
 mod position;
+mod game;
 
+use init::window_conf;
 
-fn window_conf() -> Conf {
+use crate::position::{pos_from_middle, gen_size};
 
-    let icon = icon_loader::load_icon("ui_assets/pentago.ico").expect("failed to load icon.ico");
-    Conf { 
-        window_title: "Pentago".to_owned(), 
-        window_width: position::WIDTH,
-        window_height: position::HEIGHT,
-        fullscreen: false, 
-        window_resizable: false, 
-        icon: Some(icon), 
-        ..Default::default()
-    }
-}
 
 #[macroquad::main(window_conf)]
 async fn main() {
@@ -31,7 +22,7 @@ async fn main() {
 
         root_ui().push_skin(&skin);
 
-        root_ui().window(hash!(), position::middle_pos(0.5, 0.5, 300., 300.), vec2(300., 300.), |ui| {
+        root_ui().window(hash!(), pos_from_middle(0.5, 0.5, 0.4, 0.5), gen_size(0.4, 0.5), |ui| {
             widgets::Button::new("Play")
                 .position(vec2(65.0, 15.0))
                 .ui(ui);
