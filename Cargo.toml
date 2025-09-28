@@ -3,4 +3,11 @@ name = "pentago"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "pentago"
+path = "src/pentago.rs"
+
 [dependencies]
+macroquad = "0.4.14"
+ico = "0.4"
+image = "0.24"
