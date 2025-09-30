@@ -8,13 +8,14 @@ mod game;
 
 use init::window_conf;
 
-use crate::position::{pos_from_middle, gen_size};
+use crate::position::WindowContext;
 
-
-#[macroquad::main(window_conf)]
+#[macroquad::main(window_conf())]
 async fn main() {
 
     let skin = style::gen_skin().await;
+
+    let screen = WindowContext::new(init::GAME_WIDTH, init::GAME_HEIGHT);
 
     loop {
         clear_background(custom_colors::BLEU_NUIT);
@@ -22,16 +23,17 @@ async fn main() {
 
         root_ui().push_skin(&skin);
 
-        root_ui().window(hash!(), pos_from_middle(0.5, 0.5, 0.4, 0.5), gen_size(0.4, 0.5), |ui| {
+        root_ui().window(hash!(), screen.pos_from_middle(0.5, 0.5, 0.4, 0.5), screen.gen_size(0.4, 0.5), |ui| {
+            let window = WindowContext::new(0.4 * init::GAME_WIDTH, 0.5 * init::GAME_HEIGHT);
             widgets::Button::new("Play")
-                .position(vec2(65.0, 15.0))
+                .position(window.pos_from_middle(0.5, 0.25, 0.6, 0.2))
                 .ui(ui);
             widgets::Button::new("Options")
-                .position(vec2(40.0, 75.0))
+                .position(window.pos_from_middle(0.5, 0.5, 0.7, 0.2))
                 .ui(ui);
 
             widgets::Button::new("Quit")
-                .position(vec2(65.0, 195.0))
+                .position(window.pos_from_middle(0.5, 0.75, 0.6, 0.2))
                 .ui(ui);
         });
         root_ui().pop_skin();

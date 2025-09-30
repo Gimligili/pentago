@@ -5,15 +5,17 @@ use macroquad::prelude::*;
 use crate::miniquad::conf::Icon;
 use ico::IconDir;
 use image::imageops::FilterType;
-use crate::position;
+
+pub const GAME_WIDTH: f32 = 800.;
+pub const GAME_HEIGHT: f32 = 600.;
 
 pub fn window_conf() -> Conf {
 
     let icon = load_icon("ui_assets/pentago.ico").expect("failed to load icon.ico");
     Conf { 
         window_title: "Pentago".to_owned(), 
-        window_width: position::WIDTH as i32,
-        window_height: position::HEIGHT as i32,
+        window_width: GAME_WIDTH as i32,
+        window_height: GAME_HEIGHT as i32,
         fullscreen: false, 
         window_resizable: false, 
         icon: Some(icon), 
