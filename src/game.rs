@@ -106,7 +106,7 @@ impl Board {
     /// Place a marble directly into a specific tile
     pub fn place(
         &mut self,
-        place_action: Placement,
+        place_action: &Placement,
         state: CellState,
     ) -> Result<(), &'static str> {
         if place_action.tile_row >= 2 || place_action.tile_column >= 2 {
@@ -118,7 +118,7 @@ impl Board {
     /// Rotate a specific tile (quadrant)
     pub fn rotate_tile(
         &mut self,
-        rotation_action: Rotation
+        rotation_action: &Rotation
     ) -> Result<(), &'static str> {
         if rotation_action.tile_row >= 2 || rotation_action.tile_column >= 2 {
             return Err("Invalid tile position");
@@ -224,15 +224,15 @@ impl Game {
         }
     }
 
-    pub fn place(&mut self) {
-        // place 
-        // self.last_action = placement
+    pub fn place(&mut self, placement: Placement) {
+        self.board.place(&placement, self.current_player).unwrap();
+        self.last_action = PlayerAction::Placement(placement);
         self.state = TurnState::PlacementDone
     }
 
-    pub fn rotate(&mut self) {
-        // rotate 
-        // self.last_action = rotation
+    pub fn rotate(&mut self, rotation: Rotation) {
+        self.board.rotate_tile(&rotation).unwrap();
+        self.last_action = PlayerAction::Rotation(rotation);
         self.state = TurnState::RotationDone
     }
 
@@ -266,24 +266,32 @@ impl Game {
     }
 
     pub fn cancel_action(&mut self) {
-        match &self.last_action {
-            PlayerAction::Placement(last_placement) if self.state == TurnState::PlacementDone => {
-                if let Err(e) = self.board.place(last_placement.clone(), CellState::Empty) {
-                    eprintln!("Error canceling previous placement: {}", e);
+        match &self.state {
+            TurnState::PlacementDone => {
+                if let PlayerAction::Placement(ref last_placement) = self.last_action {
+                    if let Err(e) = self.board.place(&last_placement, CellState::Empty) {
+                        eprintln!("Error canceling previous placement: {}", e);
+                    }
+                    self.state = TurnState::WaitingForPlacement;
+                    self.last_action = PlayerAction::Validate;
                 }
             }
-            PlayerAction::Rotation(last_rotation) if self.state == TurnState::RotationDone => {
-                let opposite_orientation = match last_rotation.rotation_orientation {
-                    TileRotation::CounterClockwise => TileRotation::Clockwise,
-                    TileRotation::Clockwise => TileRotation::CounterClockwise,
-                };
-                let opposite_rotation = Rotation {
-                    tile_row: last_rotation.tile_row,
-                    tile_column: last_rotation.tile_column,
-                    rotation_orientation: opposite_orientation,
-                };
-                if let Err(e) = self.board.rotate_tile(opposite_rotation) {
-                    eprintln!("Error canceling previous rotation: {}", e);
+            TurnState::RotationDone => {
+                if let PlayerAction::Rotation(ref last_rotation) = self.last_action {
+                    let opposite_orientation = match last_rotation.rotation_orientation {
+                        TileRotation::CounterClockwise => TileRotation::Clockwise,
+                        TileRotation::Clockwise => TileRotation::CounterClockwise,
+                    };
+                    let opposite_rotation = Rotation {
+                        tile_row: last_rotation.tile_row,
+                        tile_column: last_rotation.tile_column,
+                        rotation_orientation: opposite_orientation,
+                    };
+                    if let Err(e) = self.board.rotate_tile(&opposite_rotation) {
+                        eprintln!("Error canceling previous rotation: {}", e);
+                    }
+                    self.state = TurnState::WaitingForRotation;
+                    self.last_action = PlayerAction::Validate;
                 }
             }
             _ => {} // No action needed for other states

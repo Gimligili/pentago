@@ -13,6 +13,10 @@ use crate::position::WindowContext;
 #[macroquad::main(window_conf())]
 async fn main() {
 
+    
+    let game = game::Game::new();
+    println!("{:#?}", game.board);
+
     let skin = style::gen_skin().await;
 
     let screen = WindowContext::new(init::GAME_WIDTH, init::GAME_HEIGHT);
