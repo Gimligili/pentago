@@ -1,7 +1,7 @@
 use macroquad::prelude::*;
 use macroquad::ui::{hash, root_ui, widgets};
 mod init;
-mod custom_colors;
+mod graphics;
 mod style;
 mod position;
 mod game;
@@ -13,16 +13,12 @@ use crate::position::WindowContext;
 #[macroquad::main(window_conf())]
 async fn main() {
 
-    
-    let game = game::Game::new();
-    println!("{:#?}", game.board);
-
     let skin = style::gen_skin().await;
 
     let screen = WindowContext::new(init::GAME_WIDTH, init::GAME_HEIGHT);
 
     loop {
-        clear_background(custom_colors::BLEU_NUIT);
+        clear_background(graphics::BLEU_NUIT);
 
 
         root_ui().push_skin(&skin);
