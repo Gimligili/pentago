@@ -82,46 +82,58 @@ async fn main() {
             AppState::Playing => {
                 ui::game_view::draw_game(&game, &game_textures, &game_view_state);
 
-                match game.state {
-                    TurnState::WaitingForPlacement => {
-                        if let Some(placement) = ui::input::clicked_placement()
-                            && let Err(error) = game.place(placement)
-                        {
-                            println!("{error}");
-                        }
-                    }
-
-                    TurnState::PlacementDone => {
-                        game.validate().unwrap();
-                    }
-
-                    TurnState::WaitingForRotation => {
-                        if let Some(clicked_tile) = ui::input::clicked_tile() {
-                            if game_view_state.selected_tile == Some(clicked_tile) {
-                                game_view_state.selected_tile = None;
-                            } else {
-                                game_view_state.selected_tile = Some(clicked_tile);
-                            }
-                        }
-                        if let Some((tile_row, tile_column)) = game_view_state.selected_tile
-                            && let Some(rotation_orientation) = ui::input::clicked_rotation()
-                        {
-                            let rotation = game::Rotation {
-                                tile_row,
-                                tile_column,
-                                rotation_orientation,
-                            };
-
-                            if let Err(error) = game.rotate(rotation) {
+                // Right click: cancel the last action
+                if is_mouse_button_pressed(MouseButton::Right) {
+                    game.cancel_action();
+                    game_view_state.selected_tile = None;
+                } else {
+                    match game.state {
+                        TurnState::WaitingForPlacement => {
+                            if let Some(placement) = ui::input::clicked_placement()
+                                && let Err(error) = game.place(placement)
+                            {
                                 println!("{error}");
-                            } else {
-                                game_view_state.selected_tile = None
                             }
                         }
-                    }
 
-                    TurnState::RotationDone => {
-                        game.validate().unwrap();
+                        TurnState::PlacementDone => {
+                            if is_key_pressed(KeyCode::Enter)
+                                && let Err(error) = game.validate() {
+                                println!("{error}");
+                            }
+                        }
+
+                        TurnState::WaitingForRotation => {
+                            if let Some(clicked_tile) = ui::input::clicked_tile() {
+                                if game_view_state.selected_tile == Some(clicked_tile) {
+                                    game_view_state.selected_tile = None;
+                                } else {
+                                    game_view_state.selected_tile = Some(clicked_tile);
+                                }
+                            }
+                            if let Some((tile_row, tile_column)) = game_view_state.selected_tile
+                                && let Some(rotation_orientation) = ui::input::clicked_rotation()
+                            {
+                                let rotation = game::Rotation {
+                                    tile_row,
+                                    tile_column,
+                                    rotation_orientation,
+                                };
+
+                                if let Err(error) = game.rotate(rotation) {
+                                    println!("{error}");
+                                } else {
+                                    game_view_state.selected_tile = None
+                                }
+                            }
+                        }
+
+                        TurnState::RotationDone => {
+                            if is_key_pressed(KeyCode::Enter)
+                                && let Err(error) = game.validate() {
+                                println!("{error}");
+                            }
+                        }
                     }
                 }
             }

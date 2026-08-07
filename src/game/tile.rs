@@ -70,4 +70,18 @@ impl Tile {
             }
         }
     }
+
+    pub fn remove(&mut self, row: usize, column: usize) -> Result<(), &'static str> {
+        if row >= 3 || column >= 3 {
+            return Err("Invalid position");
+        }
+
+        if self.cells[row][column].state == CellState::Empty {
+            return Err("Cell already empty");
+        }
+
+        self.cells[row][column].state = CellState::Empty;
+
+        Ok(())
+    }
 }

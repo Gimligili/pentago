@@ -98,11 +98,16 @@ impl Game {
         match &self.state {
             TurnState::PlacementDone => {
                 if let PlayerAction::Placement(ref last_placement) = self.last_action {
-                    if let Err(e) = self.board.place(last_placement, CellState::Empty) {
-                        eprintln!("Error canceling previous placement: {}", e);
+                    match self.board.remove(last_placement) {
+                        Ok(()) => {
+                            self.state = TurnState::WaitingForPlacement;
+                            self.last_action = PlayerAction::Validate;
+                        }
+
+                        Err(e) => {
+                            eprint!("Error canceling previous placement: {e}")
+                        }
                     }
-                    self.state = TurnState::WaitingForPlacement;
-                    self.last_action = PlayerAction::Validate;
                 }
             }
             TurnState::RotationDone => {

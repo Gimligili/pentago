@@ -46,6 +46,13 @@ impl Board {
         )
     }
 
+    pub fn remove(&mut self, placement: &Placement) -> Result<(), &'static str> {
+        if placement.tile_row >= 2 || placement.tile_column >= 2 {
+            return Err("Invalid tile id");
+        }
+        self.tiles[placement.tile_row][placement.tile_column].remove(placement.row, placement.column)
+    }
+
     /// Rotate a specific tile (quadrant)
     pub fn rotate_tile(&mut self, rotation_action: &Rotation) -> Result<(), &'static str> {
         if rotation_action.tile_row >= 2 || rotation_action.tile_column >= 2 {
