@@ -1,8 +1,10 @@
 use macroquad::prelude::*;
 
-use crate::game::{CellState, Game};
+use crate::game::{CellState, Game, TurnState};
 
-pub const TILE_SIZE: f32 = 220.0;
+const TOP_UI_HEIGHT: f32 = 105.0;
+
+pub const TILE_SIZE: f32 = 230.0;
 pub const TILE_GAP: f32 = 12.0;
 
 pub const BOARD_SIZE: f32 = TILE_SIZE * 2.0 + TILE_GAP;
@@ -123,12 +125,9 @@ fn draw_marble(
     }
 }
 
-fn draw_selected_tile(tile_row: usize, tile_column: usize) {
-    let board_x = (screen_width() - BOARD_SIZE) / 2.0;
-    let board_y = (screen_height() - BOARD_SIZE) / 2.0;
-
-    let x = board_x + tile_column as f32 * (TILE_SIZE + TILE_GAP);
-    let y = board_y + tile_row as f32 * (TILE_SIZE + TILE_GAP);
+fn draw_selected_tile(tile_row: usize, tile_column: usize, board: Vec2) {
+    let x = board.x + tile_column as f32 * (TILE_SIZE + TILE_GAP);
+    let y = board.y + tile_row as f32 * (TILE_SIZE + TILE_GAP);
 
     draw_rectangle_lines(
         x - 4.0,
@@ -189,14 +188,47 @@ fn draw_rotation_buttons(textures: &GameTextures) {
     );
 }
 
+fn draw_game_status(game: &Game, view_state: &GameViewState) {
+    let player_text = match game.current_player {
+        CellState::White => "White player's turn",
+        CellState::Black => "Black player's turn",
+        CellState::Empty => "",
+    };
+
+    let action_text = match game.state {
+        TurnState::WaitingForPlacement => "Place a marble",
+        TurnState::PlacementDone => "Press 'Enter' to confirm or click 'right-click' to cancel",
+        TurnState::WaitingForRotation => {
+            if view_state.selected_tile.is_some() {
+                "Choose selected tile rotation direction"
+            } else {
+                "Select a tile to rotate"
+            }
+        }
+        TurnState::RotationDone => "Press 'Enter' to confirm or click 'right-click' to cancel",
+    };
+
+
+    draw_text(player_text, 30.0, 35.0, 40.0, WHITE);
+    draw_text(action_text, 30.0, 70.0, 25.0, GRAY);
+}
+
+pub fn board_origin() -> Vec2 {
+    vec2(
+        (screen_width() - BOARD_SIZE) / 2.0,
+        TOP_UI_HEIGHT,
+    )
+}
+
 pub fn draw_game(game: &Game, textures: &GameTextures, view_state: &GameViewState) {
-    let board_x = (screen_width() - BOARD_SIZE) / 2.0;
-    let board_y = (screen_height() - BOARD_SIZE) / 2.0;
+    let board = board_origin();
+
+    draw_game_status(game, view_state);
 
     // Background/support behind the four tiles
     draw_rounded_rectangle(
-        board_x - BOARD_PADDING,
-        board_y - BOARD_PADDING,
+        board.x - BOARD_PADDING,
+        board.y - BOARD_PADDING,
         BOARD_SIZE + BOARD_PADDING * 2.0,
         BOARD_SIZE + BOARD_PADDING * 2.0,
         BOARD_CORNER_RADIUS,
@@ -206,8 +238,8 @@ pub fn draw_game(game: &Game, textures: &GameTextures, view_state: &GameViewStat
     // Draw the four tiles
     for tile_row in 0..2 {
         for tile_column in 0..2 {
-            let pos_x = board_x + tile_column as f32 * (TILE_SIZE + TILE_GAP);
-            let pos_y = board_y + tile_row as f32 * (TILE_SIZE + TILE_GAP);
+            let pos_x = board.x + tile_column as f32 * (TILE_SIZE + TILE_GAP);
+            let pos_y = board.y + tile_row as f32 * (TILE_SIZE + TILE_GAP);
 
             draw_texture_ex(
                 &textures.tile,
@@ -224,7 +256,7 @@ pub fn draw_game(game: &Game, textures: &GameTextures, view_state: &GameViewStat
         }
     }
     if let Some((tile_row, tile_column)) = view_state.selected_tile {
-        draw_selected_tile(tile_row, tile_column);
+        draw_selected_tile(tile_row, tile_column, board);
         draw_rotation_buttons(textures);
     }
 }

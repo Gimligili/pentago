@@ -2,7 +2,13 @@ use macroquad::prelude::*;
 
 use crate::game::{Placement, TileRotation};
 
-use super::game_view::{BOARD_SIZE, TILE_GAP, TILE_SIZE, rotation_buttons_rect};
+use super::game_view::{
+    board_origin,
+    rotation_buttons_rect,
+    BOARD_SIZE,
+    TILE_GAP,
+    TILE_SIZE,
+};
 
 pub fn clicked_placement() -> Option<Placement> {
     if !is_mouse_button_pressed(MouseButton::Left) {
@@ -10,14 +16,16 @@ pub fn clicked_placement() -> Option<Placement> {
     }
 
     let (mouse_x, mouse_y) = mouse_position();
+    let origin = board_origin();
 
-    let board_x = (screen_width() - BOARD_SIZE) / 2.0;
-    let board_y = (screen_height() - BOARD_SIZE) / 2.0;
+    let local_x = mouse_x - origin.x;
+    let local_y = mouse_y - origin.y;
 
-    let local_x = mouse_x - board_x;
-    let local_y = mouse_y - board_y;
-
-    if local_x < 0.0 || local_y < 0.0 || local_x >= BOARD_SIZE || local_y >= BOARD_SIZE {
+    if local_x < 0.0
+        || local_y < 0.0
+        || local_x >= BOARD_SIZE
+        || local_y >= BOARD_SIZE
+    {
         return None;
     }
 
@@ -33,7 +41,7 @@ pub fn clicked_placement() -> Option<Placement> {
     let x_in_tile = local_x - tile_column as f32 * tile_stride;
     let y_in_tile = local_y - tile_row as f32 * tile_stride;
 
-    // Ignore tile padding
+    // Ignore the gap between tiles
     if x_in_tile >= TILE_SIZE || y_in_tile >= TILE_SIZE {
         return None;
     }
@@ -57,14 +65,16 @@ pub fn clicked_tile() -> Option<(usize, usize)> {
     }
 
     let (mouse_x, mouse_y) = mouse_position();
+    let origin = board_origin();
 
-    let board_x = (screen_width() - BOARD_SIZE) / 2.0;
-    let board_y = (screen_height() - BOARD_SIZE) / 2.0;
+    let local_x = mouse_x - origin.x;
+    let local_y = mouse_y - origin.y;
 
-    let local_x = mouse_x - board_x;
-    let local_y = mouse_y - board_y;
-
-    if local_x < 0.0 || local_y < 0.0 || local_x >= BOARD_SIZE || local_y >= BOARD_SIZE {
+    if local_x < 0.0
+        || local_y < 0.0
+        || local_x >= BOARD_SIZE
+        || local_y >= BOARD_SIZE
+    {
         return None;
     }
 
@@ -80,7 +90,7 @@ pub fn clicked_tile() -> Option<(usize, usize)> {
     let x_in_tile = local_x - tile_column as f32 * tile_stride;
     let y_in_tile = local_y - tile_row as f32 * tile_stride;
 
-    // Ignore tile padding
+    // Ignore the gap between tiles
     if x_in_tile >= TILE_SIZE || y_in_tile >= TILE_SIZE {
         return None;
     }
@@ -93,7 +103,8 @@ pub fn clicked_rotation() -> Option<TileRotation> {
         return None;
     }
 
-    let mouse = vec2(mouse_position().0, mouse_position().1);
+    let (mouse_x, mouse_y) = mouse_position();
+    let mouse = vec2(mouse_x, mouse_y);
 
     let (counter_clockwise, clockwise) = rotation_buttons_rect();
 

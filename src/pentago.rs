@@ -98,7 +98,8 @@ async fn main() {
 
                         TurnState::PlacementDone => {
                             if is_key_pressed(KeyCode::Enter)
-                                && let Err(error) = game.validate() {
+                                && let Err(error) = game.validate()
+                            {
                                 println!("{error}");
                             }
                         }
@@ -130,7 +131,8 @@ async fn main() {
 
                         TurnState::RotationDone => {
                             if is_key_pressed(KeyCode::Enter)
-                                && let Err(error) = game.validate() {
+                                && let Err(error) = game.validate()
+                            {
                                 println!("{error}");
                             }
                         }

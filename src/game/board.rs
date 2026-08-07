@@ -50,7 +50,8 @@ impl Board {
         if placement.tile_row >= 2 || placement.tile_column >= 2 {
             return Err("Invalid tile id");
         }
-        self.tiles[placement.tile_row][placement.tile_column].remove(placement.row, placement.column)
+        self.tiles[placement.tile_row][placement.tile_column]
+            .remove(placement.row, placement.column)
     }
 
     /// Rotate a specific tile (quadrant)
