@@ -8,7 +8,7 @@ mod ui;
 
 use init::window_conf;
 
-use crate::position::WindowContext;
+use crate::{position::WindowContext, ui::main_menu::MainMenuAction};
 use ui::{game_over::GameOverAction, mode_selection::ModeSelectionAction};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -34,11 +34,19 @@ async fn main() {
         clear_background(graphics::BLEU_NUIT);
 
         match app_state {
-            AppState::MainMenu => {
-                if ui::main_menu::draw_main_menu(&skin, &screen) {
+            AppState::MainMenu => match ui::main_menu::draw_main_menu(&skin, &screen) {
+                MainMenuAction::None => {}
+
+                MainMenuAction::Play => {
                     app_state = AppState::ModeSelection;
                 }
-            }
+
+                MainMenuAction::Options => {}
+
+                MainMenuAction::Quit => {
+                    return;
+                }
+            },
 
             AppState::ModeSelection => {
                 match ui::mode_selection::draw_mode_selection(&skin, &screen) {

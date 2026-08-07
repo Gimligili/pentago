@@ -4,8 +4,16 @@ use macroquad::ui::{hash, root_ui, widgets};
 use crate::init;
 use crate::position::WindowContext;
 
-pub fn draw_main_menu(skin: &macroquad::ui::Skin, screen: &WindowContext) -> bool {
-    let mut play_clicked = false;
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MainMenuAction {
+    None,
+    Play,
+    Options,
+    Quit,
+}
+
+pub fn draw_main_menu(skin: &macroquad::ui::Skin, screen: &WindowContext) -> MainMenuAction {
+    let mut action = MainMenuAction::None;
 
     draw_text_ex(
         "Pentago",
@@ -34,20 +42,26 @@ pub fn draw_main_menu(skin: &macroquad::ui::Skin, screen: &WindowContext) -> boo
                 .position(window.pos_from_middle(0.5, 0.25, 0.6, 0.2))
                 .ui(ui)
             {
-                play_clicked = true;
+                action = MainMenuAction::Play;
             }
 
-            widgets::Button::new("Options")
+            if widgets::Button::new("Options")
                 .position(window.pos_from_middle(0.5, 0.5, 0.7, 0.2))
-                .ui(ui);
+                .ui(ui)
+            {
+                action = MainMenuAction::Options;
+            }
 
-            widgets::Button::new("Quit")
+            if widgets::Button::new("Quit")
                 .position(window.pos_from_middle(0.5, 0.75, 0.6, 0.2))
-                .ui(ui);
+                .ui(ui)
+            {
+                action = MainMenuAction::Quit;
+            }
         },
     );
 
     root_ui().pop_skin();
 
-    play_clicked
+    action
 }
