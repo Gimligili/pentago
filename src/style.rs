@@ -1,11 +1,9 @@
 use macroquad::prelude::*;
-use macroquad::ui::{root_ui, Skin};
+use macroquad::ui::{Skin, root_ui};
 
 pub async fn gen_skin() -> Skin {
-    let skin : Skin = {
-        let font = load_ttf_font("./ui_assets/button.ttf")
-            .await
-            .unwrap();
+    let skin: Skin = {
+        let font = load_ttf_font("./ui_assets/button.ttf").await.unwrap();
         let label_style = root_ui()
             .style_builder()
             .with_font(&font)
@@ -13,7 +11,7 @@ pub async fn gen_skin() -> Skin {
             .text_color(Color::from_rgba(180, 180, 120, 255))
             .font_size(30)
             .build();
-    
+
         let window_style = root_ui()
             .style_builder()
             .background(
@@ -26,7 +24,7 @@ pub async fn gen_skin() -> Skin {
             .background_margin(RectOffset::new(20.0, 20.0, 10.0, 10.0))
             .margin(RectOffset::new(-20.0, -30.0, 0.0, 0.0))
             .build();
-        
+
         let button_style = root_ui()
             .style_builder()
             .background(
@@ -57,7 +55,7 @@ pub async fn gen_skin() -> Skin {
             .text_color(Color::from_rgba(180, 180, 100, 255))
             .font_size(40)
             .build();
-        
+
         let editbox_style = root_ui()
             .style_builder()
             .background_margin(RectOffset::new(0., 0., 0., 0.))
@@ -67,7 +65,7 @@ pub async fn gen_skin() -> Skin {
             .color_selected(Color::from_rgba(190, 190, 190, 255))
             .font_size(50)
             .build();
-        
+
         Skin {
             editbox_style,
             window_style,

@@ -12,17 +12,17 @@ pub struct Cell {
 
 impl Cell {
     pub fn new() -> Self {
-        Cell { state: CellState::Empty }
+        Cell {
+            state: CellState::Empty,
+        }
     }
 }
-
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TileRotation {
     Clockwise,
     CounterClockwise,
 }
-
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Tile {
@@ -37,7 +37,12 @@ impl Tile {
     }
 
     /// Place a marble (if the cell is empty)
-    pub fn place(&mut self, row: usize, column: usize, state: CellState) -> Result<(), &'static str> {
+    pub fn place(
+        &mut self,
+        row: usize,
+        column: usize,
+        state: CellState,
+    ) -> Result<(), &'static str> {
         if row >= 3 || column >= 3 {
             return Err("Invalid position");
         }
@@ -52,18 +57,17 @@ impl Tile {
     pub fn rotate(&mut self, rotation: TileRotation) {
         let original_cells = self.cells;
         if rotation == TileRotation::Clockwise {
-            for r in 0..3 {
-                for c in 0..3 {
+            for (r, _) in original_cells.iter().enumerate() {
+                for (c, _) in original_cells[r].iter().enumerate() {
                     self.cells[c][2 - r] = original_cells[r][c];
                 }
             }
         } else if rotation == TileRotation::CounterClockwise {
-            for r in 0..3 {
-                for c in 0..3 {
+            for (r, _) in original_cells.iter().enumerate() {
+                for (c, _) in original_cells[r].iter().enumerate() {
                     self.cells[2 - c][r] = original_cells[r][c];
                 }
             }
-            
         }
     }
 }

@@ -1,12 +1,10 @@
-
-pub mod tile;
 pub mod board;
 pub mod rules;
+pub mod tile;
 
-pub use tile::{CellState, Tile, TileRotation};
 pub use board::{Board, Placement, Rotation};
-pub use rules::{check_winner};
-
+pub use rules::check_winner;
+pub use tile::{CellState, Tile, TileRotation};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TurnState {
@@ -33,7 +31,6 @@ pub struct Game {
 }
 
 impl Game {
-
     pub fn new() -> Self {
         Game {
             board: Board::new(),
@@ -44,7 +41,7 @@ impl Game {
         }
     }
 
-    pub fn place(&mut self, placement: Placement) ->  Result<(), &'static str> {
+    pub fn place(&mut self, placement: Placement) -> Result<(), &'static str> {
         if self.state == TurnState::WaitingForPlacement {
             self.board.place(&placement, self.current_player)?;
             self.last_action = PlayerAction::Placement(placement);
@@ -55,7 +52,7 @@ impl Game {
         }
     }
 
-    pub fn rotate(&mut self, rotation: Rotation) ->  Result<(), &'static str> {
+    pub fn rotate(&mut self, rotation: Rotation) -> Result<(), &'static str> {
         if self.state == TurnState::WaitingForRotation {
             self.board.rotate_tile(&rotation)?;
             self.last_action = PlayerAction::Rotation(rotation);
@@ -66,18 +63,18 @@ impl Game {
         }
     }
 
-    pub fn validate(&mut self) ->  Result<(), &'static str> {
+    pub fn validate(&mut self) -> Result<(), &'static str> {
         if check_winner(&self.board, CellState::White) {
             self.winner = CellState::White;
-            return Ok(()); 
+            return Ok(());
         } else if check_winner(&self.board, CellState::Black) {
             self.winner = CellState::Black;
-            return Ok(()); 
+            return Ok(());
         }
 
         match &self.state {
-            TurnState::WaitingForPlacement => {Err("Action not allowed in this state of the game !")},
-            TurnState::WaitingForRotation => {Err("Action not allowed in this state of the game !")},
+            TurnState::WaitingForPlacement => Err("Action not allowed in this state of the game !"),
+            TurnState::WaitingForRotation => Err("Action not allowed in this state of the game !"),
             TurnState::PlacementDone => {
                 self.state = TurnState::WaitingForRotation;
                 self.last_action = PlayerAction::Validate;
@@ -87,7 +84,7 @@ impl Game {
                 let next_player = match self.current_player {
                     CellState::Black => CellState::White,
                     CellState::White => CellState::Black,
-                    CellState::Empty => CellState::Empty,                    
+                    CellState::Empty => CellState::Empty,
                 };
                 self.current_player = next_player;
                 self.state = TurnState::WaitingForPlacement;

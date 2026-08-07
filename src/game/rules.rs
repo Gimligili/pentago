@@ -1,8 +1,4 @@
-use super::{
-    Board,
-    CellState,
-};
-
+use super::{Board, CellState};
 
 /// Check if a player (by CellState) has 5 in a row
 pub fn check_winner(board: &Board, player: CellState) -> bool {
@@ -25,7 +21,8 @@ pub fn check_winner(board: &Board, player: CellState) -> bool {
                 let mut next_row = row as isize;
                 let mut next_column = column as isize;
 
-                for _ in 0..4 { // need 4 more after the first
+                for _ in 0..4 {
+                    // need 4 more after the first
                     next_row += direction_row;
                     next_column += direction_column;
                     if !(0..6).contains(&next_row) || !(0..6).contains(&next_column) {

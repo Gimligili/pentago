@@ -1,8 +1,4 @@
-use super::{
-    CellState,
-    Tile,
-    TileRotation,
-};
+use super::{CellState, Tile, TileRotation};
 
 // All available player actions on Board
 
@@ -21,7 +17,6 @@ pub struct Rotation {
     pub rotation_orientation: TileRotation,
 }
 
-
 /// The full Pentago board: 2x2 grid of 3x3 tiles (total 6x6)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Board {
@@ -31,12 +26,10 @@ pub struct Board {
 impl Board {
     pub fn new() -> Self {
         Board {
-            tiles: [[Tile::new(), Tile::new()],
-                    [Tile::new(), Tile::new()]],
+            tiles: [[Tile::new(), Tile::new()], [Tile::new(), Tile::new()]],
         }
     }
 
-    
     /// Place a marble directly into a specific tile
     pub fn place(
         &mut self,
@@ -46,18 +39,20 @@ impl Board {
         if place_action.tile_row >= 2 || place_action.tile_column >= 2 {
             return Err("Invalid tile id");
         }
-        self.tiles[place_action.tile_row][place_action.tile_column].place(place_action.row, place_action.column, state)
+        self.tiles[place_action.tile_row][place_action.tile_column].place(
+            place_action.row,
+            place_action.column,
+            state,
+        )
     }
 
     /// Rotate a specific tile (quadrant)
-    pub fn rotate_tile(
-        &mut self,
-        rotation_action: &Rotation
-    ) -> Result<(), &'static str> {
+    pub fn rotate_tile(&mut self, rotation_action: &Rotation) -> Result<(), &'static str> {
         if rotation_action.tile_row >= 2 || rotation_action.tile_column >= 2 {
             return Err("Invalid tile position");
         }
-        self.tiles[rotation_action.tile_row][rotation_action.tile_column].rotate(rotation_action.rotation_orientation);
+        self.tiles[rotation_action.tile_row][rotation_action.tile_column]
+            .rotate(rotation_action.rotation_orientation);
         Ok(())
     }
 
@@ -68,8 +63,7 @@ impl Board {
             for tc in 0..2 {
                 for r in 0..3 {
                     for c in 0..3 {
-                        matrix[tr * 3 + r][tc * 3 + c] =
-                            self.tiles[tr][tc].cells[r][c].state;
+                        matrix[tr * 3 + r][tc * 3 + c] = self.tiles[tr][tc].cells[r][c].state;
                     }
                 }
             }
