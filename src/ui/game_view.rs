@@ -2,10 +2,10 @@ use macroquad::prelude::*;
 
 use crate::game::{CellState, Game};
 
-const TILE_SIZE: f32 = 220.0;
-const TILE_GAP: f32 = 12.0;
+pub const TILE_SIZE: f32 = 220.0;
+pub const TILE_GAP: f32 = 12.0;
 
-const BOARD_SIZE: f32 = TILE_SIZE * 2.0 + TILE_GAP;
+pub const BOARD_SIZE: f32 = TILE_SIZE * 2.0 + TILE_GAP;
 const BOARD_PADDING: f32 = 14.0;
 const BOARD_CORNER_RADIUS: f32 = 24.0;
 const BOARD_BACKGROUND: Color = Color::from_rgba(45, 30, 20, 255);
@@ -13,10 +13,35 @@ const BOARD_BACKGROUND: Color = Color::from_rgba(45, 30, 20, 255);
 const CELL_SIZE: f32 = TILE_SIZE / 3.0;
 const MARBLE_SIZE: f32 = CELL_SIZE * 0.65;
 
+const ROTATION_BUTTON_WIDTH: f32 = 60.0;
+const ROTATION_BUTTON_HEIGHT: f32 = 25.0;
+const ROTATION_BUTTON_MARGIN: f32 = 24.0;
+const ROTATION_BUTTON_GAP: f32 = 16.0;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GameViewState {
+    pub selected_tile: Option<(usize, usize)>,
+}
+
+impl Default for GameViewState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl GameViewState {
+    pub fn new() -> Self {
+        Self {
+            selected_tile: None,
+        }
+    }
+}
+
 pub struct GameTextures {
     pub tile: Texture2D,
     pub white_marble: Texture2D,
     pub black_marble: Texture2D,
+    pub rotation_arrow: Texture2D,
 }
 
 async fn load_texture_with_transparency(path: &str) -> Texture2D {
@@ -41,6 +66,7 @@ impl GameTextures {
             tile: load_texture_with_transparency("ui_assets/tile.png").await,
             white_marble: load_texture_with_transparency("ui_assets/sphere_white.png").await,
             black_marble: load_texture_with_transparency("ui_assets/sphere_black.png").await,
+            rotation_arrow: load_texture_with_transparency("ui_assets/arrow.png").await,
         }
     }
 }
@@ -59,7 +85,14 @@ fn draw_rounded_rectangle(x: f32, y: f32, width: f32, height: f32, radius: f32, 
     draw_circle(x + width - radius, y + height - radius, radius, color);
 }
 
-fn draw_marble(game: &Game, textures: &GameTextures, tile_row: usize, tile_column: usize, pos_x: f32, pos_y: f32) {
+fn draw_marble(
+    game: &Game,
+    textures: &GameTextures,
+    tile_row: usize,
+    tile_column: usize,
+    pos_x: f32,
+    pos_y: f32,
+) {
     for row in 0..3 {
         for column in 0..3 {
             let cell = game.board.tiles[tile_row][tile_column].cells[row][column];
@@ -90,7 +123,73 @@ fn draw_marble(game: &Game, textures: &GameTextures, tile_row: usize, tile_colum
     }
 }
 
-pub fn draw_game(game: &Game, textures: &GameTextures) {
+fn draw_selected_tile(tile_row: usize, tile_column: usize) {
+    let board_x = (screen_width() - BOARD_SIZE) / 2.0;
+    let board_y = (screen_height() - BOARD_SIZE) / 2.0;
+
+    let x = board_x + tile_column as f32 * (TILE_SIZE + TILE_GAP);
+    let y = board_y + tile_row as f32 * (TILE_SIZE + TILE_GAP);
+
+    draw_rectangle_lines(
+        x - 4.0,
+        y - 4.0,
+        TILE_SIZE + 8.0,
+        TILE_SIZE + 8.0,
+        4.0,
+        GOLD,
+    );
+}
+
+pub fn rotation_buttons_rect() -> (Rect, Rect) {
+    let board_x = (screen_width() - BOARD_SIZE) / 2.0;
+    let board_y = (screen_height() - BOARD_SIZE) / 2.0;
+
+    let x = board_x + BOARD_SIZE + ROTATION_BUTTON_MARGIN;
+
+    let total_height = ROTATION_BUTTON_HEIGHT * 2.0 + ROTATION_BUTTON_GAP;
+
+    let start_y = board_y + (BOARD_SIZE - total_height) / 2.0;
+
+    let counter_clockwise = Rect::new(x, start_y, ROTATION_BUTTON_WIDTH, ROTATION_BUTTON_HEIGHT);
+
+    let clockwise = Rect::new(
+        x,
+        start_y + ROTATION_BUTTON_HEIGHT + ROTATION_BUTTON_GAP,
+        ROTATION_BUTTON_WIDTH,
+        ROTATION_BUTTON_HEIGHT,
+    );
+
+    (counter_clockwise, clockwise)
+}
+
+fn draw_rotation_buttons(textures: &GameTextures) {
+    let (left_button, right_button) = rotation_buttons_rect();
+
+    draw_texture_ex(
+        &textures.rotation_arrow,
+        left_button.x,
+        left_button.y,
+        WHITE,
+        DrawTextureParams {
+            dest_size: Some(vec2(left_button.w, left_button.h)),
+            flip_x: true,
+            ..Default::default()
+        },
+    );
+
+    draw_texture_ex(
+        &textures.rotation_arrow,
+        right_button.x,
+        right_button.y,
+        WHITE,
+        DrawTextureParams {
+            dest_size: Some(vec2(right_button.w, right_button.h)),
+            ..Default::default()
+        },
+    );
+}
+
+pub fn draw_game(game: &Game, textures: &GameTextures, view_state: &GameViewState) {
     let board_x = (screen_width() - BOARD_SIZE) / 2.0;
     let board_y = (screen_height() - BOARD_SIZE) / 2.0;
 
@@ -123,5 +222,9 @@ pub fn draw_game(game: &Game, textures: &GameTextures) {
 
             draw_marble(game, textures, tile_row, tile_column, pos_x, pos_y);
         }
+    }
+    if let Some((tile_row, tile_column)) = view_state.selected_tile {
+        draw_selected_tile(tile_row, tile_column);
+        draw_rotation_buttons(textures);
     }
 }
