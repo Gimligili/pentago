@@ -3,3 +3,4 @@ pub mod game_screen;
 pub mod game_view;
 pub mod input;
 pub mod main_menu;
+pub mod mode_selection;

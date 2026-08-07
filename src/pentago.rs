@@ -9,11 +9,12 @@ mod ui;
 use init::window_conf;
 
 use crate::position::WindowContext;
-use ui::game_over::GameOverAction;
+use ui::{game_over::GameOverAction, mode_selection::ModeSelectionAction};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum AppState {
     MainMenu,
+    ModeSelection,
     Playing,
     GameOver,
 }
@@ -24,7 +25,7 @@ async fn main() {
     let game_textures = ui::game_view::GameTextures::load().await;
 
     let mut app_state = AppState::MainMenu;
-    let mut game = game::Game::new(game::GameMode::PlayerVsAI);
+    let mut game = game::Game::new(game::GameMode::PlayerVsPlayer);
     let mut game_view_state = ui::game_view::GameViewState::new();
 
     let screen = WindowContext::new(init::GAME_WIDTH, init::GAME_HEIGHT);
@@ -35,7 +36,26 @@ async fn main() {
         match app_state {
             AppState::MainMenu => {
                 if ui::main_menu::draw_main_menu(&skin, &screen) {
-                    app_state = AppState::Playing;
+                    app_state = AppState::ModeSelection;
+                }
+            }
+
+            AppState::ModeSelection => {
+                match ui::mode_selection::draw_mode_selection(&skin, &screen) {
+                    ModeSelectionAction::None => {}
+                    ModeSelectionAction::PlayerVsPlayer => {
+                        game = game::Game::new(game::GameMode::PlayerVsPlayer);
+                        game_view_state = ui::game_view::GameViewState::new();
+                        app_state = AppState::Playing;
+                    }
+                    ModeSelectionAction::PlayerVsAI => {
+                        game = game::Game::new(game::GameMode::PlayerVsAI);
+                        game_view_state = ui::game_view::GameViewState::new();
+                        app_state = AppState::Playing;
+                    }
+                    ModeSelectionAction::Back => {
+                        app_state = AppState::MainMenu;
+                    }
                 }
             }
 
