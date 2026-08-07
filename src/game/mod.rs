@@ -1,3 +1,4 @@
+pub mod ai;
 pub mod board;
 pub mod rules;
 pub mod tile;
@@ -27,6 +28,12 @@ pub enum GameStatus {
     WhiteWins,
     BlackWins,
     Draw,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GameMove {
+    pub placement: Placement,
+    pub rotation: Rotation,
 }
 
 #[derive(Debug, Clone)]

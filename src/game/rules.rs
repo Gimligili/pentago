@@ -1,4 +1,4 @@
-use super::{Board, CellState, GameStatus};
+use super::{Board, CellState, GameMove, GameStatus, Placement, Rotation, TileRotation};
 
 pub fn update_game_status(board: &Board) -> GameStatus {
     let white_wins = check_winner(board, CellState::White);
@@ -66,6 +66,64 @@ pub fn check_winner(board: &Board, player: CellState) -> bool {
         }
     }
     false
+}
+
+pub fn legal_moves(board: &Board) -> Vec<GameMove> {
+    let mut moves = Vec::new();
+
+    for tile_row in 0..2 {
+        for tile_column in 0..2 {
+            for row in 0..3 {
+                for column in 0..3 {
+                    if board.tiles[tile_row][tile_column].cells[row][column].state
+                        != CellState::Empty
+                    {
+                        continue;
+                    }
+
+                    let placement = Placement {
+                        tile_row,
+                        tile_column,
+                        row,
+                        column,
+                    };
+
+                    for rotation_tile_row in 0..2 {
+                        for rotation_tile_column in 0..2 {
+                            for rotation_orientation in
+                                [TileRotation::Clockwise, TileRotation::CounterClockwise]
+                            {
+                                moves.push(GameMove {
+                                    placement: placement.clone(),
+                                    rotation: Rotation {
+                                        tile_row: rotation_tile_row,
+                                        tile_column: rotation_tile_column,
+                                        rotation_orientation,
+                                    },
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    moves
+}
+
+pub fn apply_move(
+    board: &Board,
+    game_move: &GameMove,
+    player: CellState,
+) -> Result<Board, &'static str> {
+    let mut new_board = board.clone();
+
+    new_board.place(&game_move.placement, player)?;
+
+    new_board.rotate_tile(&game_move.rotation)?;
+
+    Ok(new_board)
 }
 
 #[cfg(test)]
@@ -138,5 +196,30 @@ mod tests {
         }
 
         assert_eq!(update_game_status(&board), GameStatus::Draw);
+    }
+
+    #[test]
+    fn apply_move_does_not_modify_original_board() {
+        let board = Board::new();
+
+        let game_move = GameMove {
+            placement: Placement {
+                tile_row: 0,
+                tile_column: 0,
+                row: 0,
+                column: 0,
+            },
+            rotation: Rotation {
+                tile_row: 0,
+                tile_column: 0,
+                rotation_orientation: TileRotation::Clockwise,
+            },
+        };
+
+        let new_board = apply_move(&board, &game_move, CellState::White).unwrap();
+
+        assert_eq!(board.tiles[0][0].cells[0][0].state, CellState::Empty);
+
+        assert_ne!(new_board, board);
     }
 }
