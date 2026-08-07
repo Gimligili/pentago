@@ -9,7 +9,7 @@ mod ui;
 
 use init::window_conf;
 
-use crate::game::{GameStatus, TurnState};
+use crate::game::{GameMode, TurnState};
 use crate::position::WindowContext;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -25,12 +25,8 @@ async fn main() {
     let game_textures = ui::game_view::GameTextures::load().await;
 
     let mut app_state = AppState::MainMenu;
-    let mut game = game::Game::new();
+    let mut game = game::Game::new(game::GameMode::PlayerVsAI);
     let mut game_view_state = ui::game_view::GameViewState::new();
-
-    game.board.tiles[0][0].cells[0][0].state = game::CellState::White;
-    game.board.tiles[0][0].cells[1][1].state = game::CellState::Black;
-    game.board.tiles[1][1].cells[2][2].state = game::CellState::White;
 
     let screen = WindowContext::new(init::GAME_WIDTH, init::GAME_HEIGHT);
 
@@ -83,63 +79,88 @@ async fn main() {
             AppState::Playing => {
                 ui::game_view::draw_game(&game, &game_textures, &game_view_state);
 
-                // Right click: cancel the last action
-                if is_mouse_button_pressed(MouseButton::Right) {
-                    game.cancel_action();
-                    game_view_state.selected_tile = None;
+                let ai_turn = game.game_mode == GameMode::PlayerVsAI
+                    && game.current_player == game::CellState::Black;
+                if ai_turn {
+                    if game.state == TurnState::WaitingForPlacement
+                        && let Some(game_move) =
+                            game::ai::choose_best_move(&game.board, game.current_player)
+                    {
+                        if let Err(error) = game.place(game_move.placement) {
+                            println!("{error}");
+                        } else if let Err(error) = game.validate() {
+                            println!("{error}")
+                        }
+
+                        if game.game_status == game::GameStatus::Ongoing {
+                            if let Err(error) = game.rotate(game_move.rotation) {
+                                println!("{error}")
+                            } else if let Err(error) = game.validate() {
+                                println!("{error}")
+                            }
+                        }
+                    }
                 } else {
-                    match game.state {
-                        TurnState::WaitingForPlacement => {
-                            if let Some(placement) = ui::input::clicked_placement()
-                                && let Err(error) = game.place(placement)
-                            {
-                                println!("{error}");
-                            }
-                        }
-
-                        TurnState::PlacementDone => {
-                            if is_key_pressed(KeyCode::Enter)
-                                && let Err(error) = game.validate()
-                            {
-                                println!("{error}");
-                            }
-                        }
-
-                        TurnState::WaitingForRotation => {
-                            if let Some(clicked_tile) = ui::input::clicked_tile() {
-                                if game_view_state.selected_tile == Some(clicked_tile) {
-                                    game_view_state.selected_tile = None;
-                                } else {
-                                    game_view_state.selected_tile = Some(clicked_tile);
-                                }
-                            }
-                            if let Some((tile_row, tile_column)) = game_view_state.selected_tile
-                                && let Some(rotation_orientation) = ui::input::clicked_rotation()
-                            {
-                                let rotation = game::Rotation {
-                                    tile_row,
-                                    tile_column,
-                                    rotation_orientation,
-                                };
-
-                                if let Err(error) = game.rotate(rotation) {
+                    // Right click: cancel the last action
+                    if is_mouse_button_pressed(MouseButton::Right) {
+                        game.cancel_action();
+                        game_view_state.selected_tile = None;
+                    } else {
+                        match game.state {
+                            TurnState::WaitingForPlacement => {
+                                if let Some(placement) = ui::input::clicked_placement()
+                                    && let Err(error) = game.place(placement)
+                                {
                                     println!("{error}");
-                                } else {
-                                    game_view_state.selected_tile = None
                                 }
                             }
-                        }
 
-                        TurnState::RotationDone => {
-                            if is_key_pressed(KeyCode::Enter)
-                                && let Err(error) = game.validate()
-                            {
-                                println!("{error}");
+                            TurnState::PlacementDone => {
+                                if is_key_pressed(KeyCode::Enter)
+                                    && let Err(error) = game.validate()
+                                {
+                                    println!("{error}");
+                                }
+                            }
+
+                            TurnState::WaitingForRotation => {
+                                if let Some(clicked_tile) = ui::input::clicked_tile() {
+                                    if game_view_state.selected_tile == Some(clicked_tile) {
+                                        game_view_state.selected_tile = None;
+                                    } else {
+                                        game_view_state.selected_tile = Some(clicked_tile);
+                                    }
+                                }
+                                if let Some((tile_row, tile_column)) = game_view_state.selected_tile
+                                    && let Some(rotation_orientation) =
+                                        ui::input::clicked_rotation()
+                                {
+                                    let rotation = game::Rotation {
+                                        tile_row,
+                                        tile_column,
+                                        rotation_orientation,
+                                    };
+
+                                    if let Err(error) = game.rotate(rotation) {
+                                        println!("{error}");
+                                    } else {
+                                        game_view_state.selected_tile = None
+                                    }
+                                }
+                            }
+
+                            TurnState::RotationDone => {
+                                if is_key_pressed(KeyCode::Enter)
+                                    && let Err(error) = game.validate()
+                                {
+                                    println!("{error}");
+                                }
                             }
                         }
                     }
                 }
 
+                // Checking game termination
                 if game.game_status != game::GameStatus::Ongoing {
                     app_state = AppState::GameOver;
                 }
@@ -169,7 +190,8 @@ async fn main() {
                             .position(window.pos_from_middle(0.5, 0.35, 0.7, 0.25))
                             .ui(ui)
                         {
-                            game = game::Game::new();
+                            let current_mode = game.game_mode;
+                            game = game::Game::new(current_mode);
                             game_view_state = ui::game_view::GameViewState::new();
                             app_state = AppState::Playing;
                         }
@@ -178,7 +200,8 @@ async fn main() {
                             .position(window.pos_from_middle(0.5, 0.70, 0.7, 0.25))
                             .ui(ui)
                         {
-                            game = game::Game::new();
+                            let current_mode = game.game_mode;
+                            game = game::Game::new(current_mode);
                             game_view_state = ui::game_view::GameViewState::new();
                             app_state = AppState::MainMenu;
                         }

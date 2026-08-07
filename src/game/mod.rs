@@ -8,6 +8,12 @@ pub use rules::update_game_status;
 pub use tile::{CellState, Tile, TileRotation};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GameMode {
+    PlayerVsPlayer,
+    PlayerVsAI,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TurnState {
     WaitingForPlacement,
     PlacementDone,
@@ -38,6 +44,7 @@ pub struct GameMove {
 
 #[derive(Debug, Clone)]
 pub struct Game {
+    pub game_mode: GameMode,
     pub board: Board,
     pub current_player: CellState,
     pub state: TurnState,
@@ -46,8 +53,9 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new() -> Self {
+    pub fn new(game_mode: GameMode) -> Self {
         Game {
+            game_mode,
             board: Board::new(),
             current_player: CellState::White,
             state: TurnState::WaitingForPlacement,
