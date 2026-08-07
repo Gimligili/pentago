@@ -1,4 +1,25 @@
-use super::{Board, CellState};
+use super::{Board, CellState, GameStatus};
+
+pub fn update_game_status(board: &Board) -> GameStatus {
+    let white_wins = check_winner(board, CellState::White);
+    let black_wins = check_winner(board, CellState::Black);
+
+    match (white_wins, black_wins) {
+        (true, false) => GameStatus::WhiteWins,
+        (false, true) => GameStatus::BlackWins,
+        (true, true) => GameStatus::Draw,
+        (false, false) => {
+            let board_matrix = board.to_matrix();
+            let board_is_full = board_matrix.iter().flatten().all(|cell| *cell != CellState::Empty);
+            
+            if board_is_full {
+                GameStatus::Draw
+            } else {
+                GameStatus::Ongoing
+            }
+        }
+    }
+}
 
 /// Check if a player (by CellState) has 5 in a row
 pub fn check_winner(board: &Board, player: CellState) -> bool {

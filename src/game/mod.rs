@@ -3,8 +3,9 @@ pub mod rules;
 pub mod tile;
 
 pub use board::{Board, Placement, Rotation};
-pub use rules::check_winner;
+pub use rules::update_game_status;
 pub use tile::{CellState, Tile, TileRotation};
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TurnState {
@@ -21,13 +22,21 @@ pub enum PlayerAction {
     Validate,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GameStatus {
+    Ongoing,
+    WhiteWins,
+    BlackWins,
+    Draw,
+}
+
 #[derive(Debug, Clone)]
 pub struct Game {
     pub board: Board,
     pub current_player: CellState,
     pub state: TurnState,
     pub last_action: PlayerAction,
-    pub winner: CellState,
+    pub game_status: GameStatus,
 }
 
 impl Game {
@@ -37,7 +46,7 @@ impl Game {
             current_player: CellState::White,
             state: TurnState::WaitingForPlacement,
             last_action: PlayerAction::Validate,
-            winner: CellState::Empty,
+            game_status: GameStatus::Ongoing,
         }
     }
 
@@ -64,11 +73,9 @@ impl Game {
     }
 
     pub fn validate(&mut self) -> Result<(), &'static str> {
-        if check_winner(&self.board, CellState::White) {
-            self.winner = CellState::White;
-            return Ok(());
-        } else if check_winner(&self.board, CellState::Black) {
-            self.winner = CellState::Black;
+        let game_status = update_game_status(&self.board);
+        if game_status != GameStatus::Ongoing {
+            self.game_status = game_status;
             return Ok(());
         }
 
