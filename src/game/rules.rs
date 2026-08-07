@@ -67,3 +67,76 @@ pub fn check_winner(board: &Board, player: CellState) -> bool {
     }
     false
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::game::Placement;
+
+    fn place(board: &mut Board, row: usize, column: usize, state: CellState) {
+        let placement = Placement {
+            tile_row: row / 3,
+            tile_column: column / 3,
+            row: row % 3,
+            column: column % 3,
+        };
+
+        board.place(&placement, state).unwrap();
+    }
+
+    #[test]
+    fn horizontal_win() {
+        let mut board = Board::new();
+
+        for column in 0..5 {
+            place(&mut board, 2, column, CellState::White);
+        }
+
+        assert!(check_winner(&board, CellState::White));
+    }
+
+    #[test]
+    fn vertical_win() {
+        let mut board = Board::new();
+
+        for row in 0..5 {
+            place(&mut board, row, 4, CellState::Black);
+        }
+
+        assert!(check_winner(&board, CellState::Black));
+    }
+
+    #[test]
+    fn diagonal_win() {
+        let mut board = Board::new();
+
+        for i in 0..5 {
+            place(&mut board, i, i, CellState::White);
+        }
+
+        assert!(check_winner(&board, CellState::White));
+    }
+
+    #[test]
+    fn four_is_not_enough() {
+        let mut board = Board::new();
+
+        for column in 0..4 {
+            place(&mut board, 1, column, CellState::White);
+        }
+
+        assert!(!check_winner(&board, CellState::White));
+    }
+
+    #[test]
+    fn simultaneous_win_is_draw() {
+        let mut board = Board::new();
+
+        for column in 0..5 {
+            place(&mut board, 0, column, CellState::White);
+            place(&mut board, 5, column, CellState::Black);
+        }
+
+        assert_eq!(update_game_status(&board), GameStatus::Draw);
+    }
+}

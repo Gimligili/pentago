@@ -85,3 +85,47 @@ impl Tile {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn place_marble() {
+        let mut tile = Tile::new();
+
+        assert!(tile.place(1, 1, CellState::White).is_ok());
+        assert_eq!(tile.cells[1][1].state, CellState::White);
+    }
+
+    #[test]
+    fn cannot_place_on_occupied_cell() {
+        let mut tile = Tile::new();
+
+        tile.place(1, 1, CellState::White).unwrap();
+
+        assert!(tile.place(1, 1, CellState::Black).is_err());
+    }
+
+    #[test]
+    fn clockwise_rotation() {
+        let mut tile = Tile::new();
+
+        tile.cells[0][0].state = CellState::White;
+
+        tile.rotate(TileRotation::Clockwise);
+
+        assert_eq!(tile.cells[0][2].state, CellState::White);
+    }
+
+    #[test]
+    fn counter_clockwise_rotation() {
+        let mut tile = Tile::new();
+
+        tile.cells[0][0].state = CellState::White;
+
+        tile.rotate(TileRotation::CounterClockwise);
+
+        assert_eq!(tile.cells[2][0].state, CellState::White);
+    }
+}
