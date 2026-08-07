@@ -1,5 +1,6 @@
 use macroquad::prelude::*;
 
+use crate::display::DisplayContext;
 use crate::game::{self, Game, GameMode, GameStatus, TurnState};
 
 use super::{
@@ -11,8 +12,9 @@ pub fn update_game_screen(
     game: &mut Game,
     textures: &GameTextures,
     view_state: &mut GameViewState,
+    display: &DisplayContext,
 ) -> bool {
-    game_view::draw_game(game, textures, view_state);
+    game_view::draw_game(game, textures, view_state, display);
 
     let ai_turn =
         game.game_mode == GameMode::PlayerVsAI && game.current_player == game::CellState::Black;
@@ -20,7 +22,7 @@ pub fn update_game_screen(
     if ai_turn {
         handle_ai_turn(game);
     } else {
-        handle_human_turn(game, view_state);
+        handle_human_turn(game, view_state, display);
     }
 
     game.game_status != GameStatus::Ongoing
@@ -59,7 +61,7 @@ fn handle_ai_turn(game: &mut Game) {
     }
 }
 
-fn handle_human_turn(game: &mut Game, view_state: &mut GameViewState) {
+fn handle_human_turn(game: &mut Game, view_state: &mut GameViewState, display: &DisplayContext) {
     if is_mouse_button_pressed(MouseButton::Right) {
         game.cancel_action();
         view_state.selected_tile = None;
@@ -68,7 +70,7 @@ fn handle_human_turn(game: &mut Game, view_state: &mut GameViewState) {
 
     match game.state {
         TurnState::WaitingForPlacement => {
-            if let Some(placement) = input::clicked_placement()
+            if let Some(placement) = input::clicked_placement(display)
                 && let Err(error) = game.place(placement)
             {
                 println!("{error}");
@@ -84,7 +86,7 @@ fn handle_human_turn(game: &mut Game, view_state: &mut GameViewState) {
         }
 
         TurnState::WaitingForRotation => {
-            handle_rotation_selection(game, view_state);
+            handle_rotation_selection(game, view_state, display);
         }
 
         TurnState::RotationDone => {
@@ -97,8 +99,12 @@ fn handle_human_turn(game: &mut Game, view_state: &mut GameViewState) {
     }
 }
 
-fn handle_rotation_selection(game: &mut Game, view_state: &mut GameViewState) {
-    if let Some(clicked_tile) = input::clicked_tile() {
+fn handle_rotation_selection(
+    game: &mut Game,
+    view_state: &mut GameViewState,
+    display: &DisplayContext,
+) {
+    if let Some(clicked_tile) = input::clicked_tile(display) {
         if view_state.selected_tile == Some(clicked_tile) {
             view_state.selected_tile = None;
         } else {
@@ -107,7 +113,7 @@ fn handle_rotation_selection(game: &mut Game, view_state: &mut GameViewState) {
     }
 
     if let Some((tile_row, tile_column)) = view_state.selected_tile
-        && let Some(rotation_orientation) = input::clicked_rotation()
+        && let Some(rotation_orientation) = input::clicked_rotation(display)
     {
         let rotation = game::Rotation {
             tile_row,

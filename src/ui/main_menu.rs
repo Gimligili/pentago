@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 
-use crate::init;
+use crate::display::DisplayContext;
 use crate::ui::components::button::Button;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -11,16 +11,22 @@ pub enum MainMenuAction {
     Quit,
 }
 
-pub fn draw_main_menu(font: &Font) -> MainMenuAction {
+pub fn draw_main_menu(font: &Font, display: &DisplayContext) -> MainMenuAction {
     let mut action = MainMenuAction::None;
+
+    let title_font_size = (120.0 * display.scale) as u16;
+    let title_size = measure_text("Pentago", Some(font), title_font_size, 1.0);
+
+    let title_x = (display.width - title_size.width) / 2.0;
+    let title_y = display.y(120.0);
 
     draw_text_ex(
         "Pentago",
-        init::GAME_WIDTH * 0.28,
-        init::GAME_HEIGHT * 0.2,
+        title_x,
+        title_y,
         TextParams {
-            font: None,
-            font_size: (init::GAME_HEIGHT * 0.2) as u16,
+            font: Some(font),
+            font_size: title_font_size,
             font_scale: 1.0,
             color: WHITE,
             rotation: 0.0,
@@ -28,12 +34,12 @@ pub fn draw_main_menu(font: &Font) -> MainMenuAction {
         },
     );
 
-    let button_width = 280.0;
-    let button_height = 60.0;
-    let button_gap = 20.0;
+    let button_width = 280.0 * display.scale;
+    let button_height = 60.0 * display.scale;
+    let button_gap = 20.0 * display.scale;
 
-    let center_x = screen_width() / 2.0;
-    let start_y = 260.0;
+    let center_x = display.width / 2.0;
+    let start_y = display.y(260.0);
 
     let mut play_button = Button::new(
         Rect::new(
@@ -69,9 +75,9 @@ pub fn draw_main_menu(font: &Font) -> MainMenuAction {
     options_button.update();
     quit_button.update();
 
-    play_button.draw(font);
-    options_button.draw(font);
-    quit_button.draw(font);
+    play_button.draw(font, display);
+    options_button.draw(font, display);
+    quit_button.draw(font, display);
 
     if play_button.is_clicked() {
         action = MainMenuAction::Play;
@@ -82,40 +88,4 @@ pub fn draw_main_menu(font: &Font) -> MainMenuAction {
     }
 
     action
-
-    // root_ui().push_skin(skin);
-
-    // root_ui().window(
-    //     hash!(),
-    //     screen.pos_from_middle(0.5, 0.6, 0.4, 0.5),
-    //     screen.gen_size(0.4, 0.5),
-    //     |ui| {
-    //         let window = WindowContext::new(0.4 * init::GAME_WIDTH, 0.5 * init::GAME_HEIGHT);
-
-    //         if widgets::Button::new("Play")
-    //             .position(window.pos_from_middle(0.5, 0.25, 0.6, 0.2))
-    //             .ui(ui)
-    //         {
-    //             action = MainMenuAction::Play;
-    //         }
-
-    //         if widgets::Button::new("Options")
-    //             .position(window.pos_from_middle(0.5, 0.5, 0.7, 0.2))
-    //             .ui(ui)
-    //         {
-    //             action = MainMenuAction::Options;
-    //         }
-
-    //         if widgets::Button::new("Quit")
-    //             .position(window.pos_from_middle(0.5, 0.75, 0.6, 0.2))
-    //             .ui(ui)
-    //         {
-    //             action = MainMenuAction::Quit;
-    //         }
-    //     },
-    // );
-
-    // root_ui().pop_skin();
-
-    // action
 }

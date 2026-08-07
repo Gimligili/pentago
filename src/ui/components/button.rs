@@ -1,5 +1,7 @@
 use macroquad::prelude::*;
 
+use crate::display::DisplayContext;
+
 pub struct Button<'a> {
     pub rect: Rect,
     pub text: &'a str,
@@ -34,7 +36,7 @@ impl<'a> Button<'a> {
         self.hover_t = self.hover_t.clamp(0.0, 1.0);
     }
 
-    pub fn draw(&self, font: &Font) {
+    pub fn draw(&self, font: &Font, display: &DisplayContext) {
         let hovered = self.is_hovered();
 
         let base_color = Color::from_rgba(35, 30, 28, 255);
@@ -42,10 +44,11 @@ impl<'a> Button<'a> {
 
         let background = if hovered { hover_color } else { base_color };
 
-        let scale = 1.0 + self.hover_t * 0.05;
+        let hover_scale = 1.0 + self.hover_t * 0.05;
 
-        let width = self.rect.w * scale;
-        let height = self.rect.h * scale;
+        let width = self.rect.w * hover_scale;
+
+        let height = self.rect.h * hover_scale;
 
         let x = self.rect.x - (width - self.rect.w) / 2.0;
 
@@ -53,15 +56,17 @@ impl<'a> Button<'a> {
 
         draw_rectangle(x, y, width, height, background);
 
-        draw_rectangle_lines(x, y, width, height, 2.0, GOLD);
+        let border_width = 2.0 * display.scale;
 
-        let font_size = 28;
+        draw_rectangle_lines(x, y, width, height, border_width, GOLD);
+
+        let font_size = (28.0 * display.scale) as u16;
 
         let text_size = measure_text(self.text, Some(font), font_size, 1.0);
 
         let text_x = self.rect.x + (self.rect.w - text_size.width) / 2.0;
 
-        let text_y = self.rect.y + (self.rect.h + text_size.height) / 2.0 - 4.0;
+        let text_y = self.rect.y + (self.rect.h + text_size.height) / 2.0 - 4.0 * display.scale;
 
         draw_text_ex(
             self.text,

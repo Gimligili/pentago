@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 
-use crate::ui::components::button::Button;
+use crate::{display::DisplayContext, ui::components::button::Button};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ModeSelectionAction {
@@ -10,7 +10,7 @@ pub enum ModeSelectionAction {
     Back,
 }
 
-pub fn draw_mode_selection(font: &Font) -> ModeSelectionAction {
+pub fn draw_mode_selection(font: &Font, display: &DisplayContext) -> ModeSelectionAction {
     let mut action = ModeSelectionAction::None;
 
     let button_width = 320.0;
@@ -54,9 +54,9 @@ pub fn draw_mode_selection(font: &Font) -> ModeSelectionAction {
     ai_button.update();
     back_button.update();
 
-    pvp_button.draw(font);
-    ai_button.draw(font);
-    back_button.draw(font);
+    pvp_button.draw(font, display);
+    ai_button.draw(font, display);
+    back_button.draw(font, display);
 
     if pvp_button.is_clicked() {
         action = ModeSelectionAction::PlayerVsPlayer;
