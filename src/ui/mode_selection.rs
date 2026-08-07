@@ -1,7 +1,6 @@
-use macroquad::ui::{hash, root_ui, widgets};
+use macroquad::prelude::*;
 
-use crate::init;
-use crate::position::WindowContext;
+use crate::ui::components::button::Button;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ModeSelectionAction {
@@ -11,45 +10,65 @@ pub enum ModeSelectionAction {
     Back,
 }
 
-pub fn draw_mode_selection(
-    skin: &macroquad::ui::Skin,
-    screen: &WindowContext,
-) -> ModeSelectionAction {
+pub fn draw_mode_selection(font: &Font) -> ModeSelectionAction {
     let mut action = ModeSelectionAction::None;
 
-    root_ui().push_skin(skin);
+    let button_width = 320.0;
+    let button_height = 60.0;
+    let button_gap = 20.0;
 
-    root_ui().window(
-        hash!(),
-        screen.pos_from_middle(0.5, 0.5, 0.5, 0.6),
-        screen.gen_size(0.5, 0.6),
-        |ui| {
-            let window = WindowContext::new(0.5 * init::GAME_WIDTH, 0.6 * init::GAME_HEIGHT);
+    let center_x = screen_width() / 2.0;
+    let start_y = 220.0;
 
-            if widgets::Button::new("Player vs Player")
-                .position(window.pos_from_middle(0.5, 0.25, 0.75, 0.18))
-                .ui(ui)
-            {
-                action = ModeSelectionAction::PlayerVsPlayer;
-            }
-
-            if widgets::Button::new("Player vs AI")
-                .position(window.pos_from_middle(0.5, 0.50, 0.75, 0.18))
-                .ui(ui)
-            {
-                action = ModeSelectionAction::PlayerVsAI;
-            }
-
-            if widgets::Button::new("Back")
-                .position(window.pos_from_middle(0.5, 0.75, 0.55, 0.18))
-                .ui(ui)
-            {
-                action = ModeSelectionAction::Back;
-            }
-        },
+    let mut pvp_button = Button::new(
+        Rect::new(
+            center_x - button_width / 2.0,
+            start_y,
+            button_width,
+            button_height,
+        ),
+        "Player vs Player",
     );
 
-    root_ui().pop_skin();
+    let mut ai_button = Button::new(
+        Rect::new(
+            center_x - button_width / 2.0,
+            start_y + button_height + button_gap,
+            button_width,
+            button_height,
+        ),
+        "Player vs AI",
+    );
+
+    let mut back_button = Button::new(
+        Rect::new(
+            center_x - button_width / 2.0,
+            start_y + (button_height + button_gap) * 2.0,
+            button_width,
+            button_height,
+        ),
+        "Back",
+    );
+
+    pvp_button.update();
+    ai_button.update();
+    back_button.update();
+
+    pvp_button.draw(font);
+    ai_button.draw(font);
+    back_button.draw(font);
+
+    if pvp_button.is_clicked() {
+        action = ModeSelectionAction::PlayerVsPlayer;
+    }
+
+    if ai_button.is_clicked() {
+        action = ModeSelectionAction::PlayerVsAI;
+    }
+
+    if back_button.is_clicked() {
+        action = ModeSelectionAction::Back;
+    }
 
     action
 }

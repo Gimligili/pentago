@@ -1,15 +1,14 @@
 use macroquad::prelude::*;
 mod game;
-mod graphics;
 mod init;
-mod position;
-mod style;
 mod ui;
 
 use init::window_conf;
 
-use crate::{position::WindowContext, ui::main_menu::MainMenuAction};
+use crate::ui::main_menu::MainMenuAction;
 use ui::{game_over::GameOverAction, mode_selection::ModeSelectionAction};
+
+pub const BLEU_NUIT: Color = Color::from_rgba(5, 5, 30, 255);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum AppState {
@@ -21,20 +20,18 @@ enum AppState {
 
 #[macroquad::main(window_conf())]
 async fn main() {
-    let skin = style::gen_skin().await;
+    let font = load_ttf_font("./ui_assets/button.ttf").await.unwrap();
     let game_textures = ui::game_view::GameTextures::load().await;
 
     let mut app_state = AppState::MainMenu;
     let mut game = game::Game::new(game::GameMode::PlayerVsPlayer);
     let mut game_view_state = ui::game_view::GameViewState::new();
 
-    let screen = WindowContext::new(init::GAME_WIDTH, init::GAME_HEIGHT);
-
     loop {
-        clear_background(graphics::BLEU_NUIT);
+        clear_background(BLEU_NUIT);
 
         match app_state {
-            AppState::MainMenu => match ui::main_menu::draw_main_menu(&skin, &screen) {
+            AppState::MainMenu => match ui::main_menu::draw_main_menu(&font) {
                 MainMenuAction::None => {}
 
                 MainMenuAction::Play => {
@@ -48,24 +45,22 @@ async fn main() {
                 }
             },
 
-            AppState::ModeSelection => {
-                match ui::mode_selection::draw_mode_selection(&skin, &screen) {
-                    ModeSelectionAction::None => {}
-                    ModeSelectionAction::PlayerVsPlayer => {
-                        game = game::Game::new(game::GameMode::PlayerVsPlayer);
-                        game_view_state = ui::game_view::GameViewState::new();
-                        app_state = AppState::Playing;
-                    }
-                    ModeSelectionAction::PlayerVsAI => {
-                        game = game::Game::new(game::GameMode::PlayerVsAI);
-                        game_view_state = ui::game_view::GameViewState::new();
-                        app_state = AppState::Playing;
-                    }
-                    ModeSelectionAction::Back => {
-                        app_state = AppState::MainMenu;
-                    }
+            AppState::ModeSelection => match ui::mode_selection::draw_mode_selection(&font) {
+                ModeSelectionAction::None => {}
+                ModeSelectionAction::PlayerVsPlayer => {
+                    game = game::Game::new(game::GameMode::PlayerVsPlayer);
+                    game_view_state = ui::game_view::GameViewState::new();
+                    app_state = AppState::Playing;
                 }
-            }
+                ModeSelectionAction::PlayerVsAI => {
+                    game = game::Game::new(game::GameMode::PlayerVsAI);
+                    game_view_state = ui::game_view::GameViewState::new();
+                    app_state = AppState::Playing;
+                }
+                ModeSelectionAction::Back => {
+                    app_state = AppState::MainMenu;
+                }
+            },
 
             AppState::Playing => {
                 if ui::game_screen::update_game_screen(
@@ -78,7 +73,7 @@ async fn main() {
             }
 
             AppState::GameOver => {
-                match ui::game_over::draw_game_over(game.game_status, &skin, &screen) {
+                match ui::game_over::draw_game_over(game.game_status, &font) {
                     GameOverAction::None => {}
 
                     GameOverAction::PlayAgain => {

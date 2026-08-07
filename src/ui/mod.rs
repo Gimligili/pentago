@@ -1,3 +1,4 @@
+pub mod components;
 pub mod game_over;
 pub mod game_screen;
 pub mod game_view;
