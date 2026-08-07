@@ -208,16 +208,12 @@ fn draw_game_status(game: &Game, view_state: &GameViewState) {
         TurnState::RotationDone => "Press 'Enter' to confirm or click 'right-click' to cancel",
     };
 
-
     draw_text(player_text, 30.0, 35.0, 40.0, WHITE);
     draw_text(action_text, 30.0, 70.0, 25.0, GRAY);
 }
 
 pub fn board_origin() -> Vec2 {
-    vec2(
-        (screen_width() - BOARD_SIZE) / 2.0,
-        TOP_UI_HEIGHT,
-    )
+    vec2((screen_width() - BOARD_SIZE) / 2.0, TOP_UI_HEIGHT)
 }
 
 pub fn draw_game(game: &Game, textures: &GameTextures, view_state: &GameViewState) {

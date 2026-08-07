@@ -9,13 +9,14 @@ mod ui;
 
 use init::window_conf;
 
-use crate::game::{Placement, TurnState};
+use crate::game::{GameStatus, TurnState};
 use crate::position::WindowContext;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum AppState {
     MainMenu,
     Playing,
+    GameOver,
 }
 
 #[macroquad::main(window_conf())]
@@ -138,6 +139,53 @@ async fn main() {
                         }
                     }
                 }
+
+                if game.game_status != game::GameStatus::Ongoing {
+                    app_state = AppState::GameOver;
+                }
+            }
+
+            AppState::GameOver => {
+                let message = match game.game_status {
+                    game::GameStatus::WhiteWins => "White wins!",
+                    game::GameStatus::BlackWins => "Black wins!",
+                    game::GameStatus::Draw => "Draw!",
+                    game::GameStatus::Ongoing => "",
+                };
+
+                draw_text(message, 260.0, 180.0, 50.0, WHITE);
+
+                root_ui().push_skin(&skin);
+
+                root_ui().window(
+                    hash!(),
+                    screen.pos_from_middle(0.5, 0.6, 0.4, 0.35),
+                    screen.gen_size(0.4, 0.35),
+                    |ui| {
+                        let window =
+                            WindowContext::new(0.4 * init::GAME_WIDTH, 0.35 * init::GAME_HEIGHT);
+
+                        if widgets::Button::new("Play again")
+                            .position(window.pos_from_middle(0.5, 0.35, 0.7, 0.25))
+                            .ui(ui)
+                        {
+                            game = game::Game::new();
+                            game_view_state = ui::game_view::GameViewState::new();
+                            app_state = AppState::Playing;
+                        }
+
+                        if widgets::Button::new("Main menu")
+                            .position(window.pos_from_middle(0.5, 0.70, 0.7, 0.25))
+                            .ui(ui)
+                        {
+                            game = game::Game::new();
+                            game_view_state = ui::game_view::GameViewState::new();
+                            app_state = AppState::MainMenu;
+                        }
+                    },
+                );
+
+                root_ui().pop_skin();
             }
         }
 

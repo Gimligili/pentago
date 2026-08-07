@@ -2,13 +2,7 @@ use macroquad::prelude::*;
 
 use crate::game::{Placement, TileRotation};
 
-use super::game_view::{
-    board_origin,
-    rotation_buttons_rect,
-    BOARD_SIZE,
-    TILE_GAP,
-    TILE_SIZE,
-};
+use super::game_view::{BOARD_SIZE, TILE_GAP, TILE_SIZE, board_origin, rotation_buttons_rect};
 
 pub fn clicked_placement() -> Option<Placement> {
     if !is_mouse_button_pressed(MouseButton::Left) {
@@ -21,11 +15,7 @@ pub fn clicked_placement() -> Option<Placement> {
     let local_x = mouse_x - origin.x;
     let local_y = mouse_y - origin.y;
 
-    if local_x < 0.0
-        || local_y < 0.0
-        || local_x >= BOARD_SIZE
-        || local_y >= BOARD_SIZE
-    {
+    if local_x < 0.0 || local_y < 0.0 || local_x >= BOARD_SIZE || local_y >= BOARD_SIZE {
         return None;
     }
 
@@ -70,11 +60,7 @@ pub fn clicked_tile() -> Option<(usize, usize)> {
     let local_x = mouse_x - origin.x;
     let local_y = mouse_y - origin.y;
 
-    if local_x < 0.0
-        || local_y < 0.0
-        || local_x >= BOARD_SIZE
-        || local_y >= BOARD_SIZE
-    {
+    if local_x < 0.0 || local_y < 0.0 || local_x >= BOARD_SIZE || local_y >= BOARD_SIZE {
         return None;
     }
 

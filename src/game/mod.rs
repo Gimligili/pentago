@@ -6,7 +6,6 @@ pub use board::{Board, Placement, Rotation};
 pub use rules::update_game_status;
 pub use tile::{CellState, Tile, TileRotation};
 
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TurnState {
     WaitingForPlacement,

@@ -10,8 +10,11 @@ pub fn update_game_status(board: &Board) -> GameStatus {
         (true, true) => GameStatus::Draw,
         (false, false) => {
             let board_matrix = board.to_matrix();
-            let board_is_full = board_matrix.iter().flatten().all(|cell| *cell != CellState::Empty);
-            
+            let board_is_full = board_matrix
+                .iter()
+                .flatten()
+                .all(|cell| *cell != CellState::Empty);
+
             if board_is_full {
                 GameStatus::Draw
             } else {
