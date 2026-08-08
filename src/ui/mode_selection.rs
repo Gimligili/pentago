@@ -13,12 +13,12 @@ pub enum ModeSelectionAction {
 pub fn draw_mode_selection(font: &Font, display: &DisplayContext) -> ModeSelectionAction {
     let mut action = ModeSelectionAction::None;
 
-    let button_width = 320.0;
-    let button_height = 60.0;
-    let button_gap = 20.0;
+    let button_width = 320.0 * display.scale;
+    let button_height = 60.0 * display.scale;
+    let button_gap = 20.0 * display.scale;
 
-    let center_x = screen_width() / 2.0;
-    let start_y = 220.0;
+    let center_x = display.width / 2.0;
+    let start_y = display.y(220.0);
 
     let mut pvp_button = Button::new(
         Rect::new(
@@ -60,13 +60,9 @@ pub fn draw_mode_selection(font: &Font, display: &DisplayContext) -> ModeSelecti
 
     if pvp_button.is_clicked() {
         action = ModeSelectionAction::PlayerVsPlayer;
-    }
-
-    if ai_button.is_clicked() {
+    } else if ai_button.is_clicked() {
         action = ModeSelectionAction::PlayerVsAI;
-    }
-
-    if back_button.is_clicked() {
+    } else if back_button.is_clicked() {
         action = ModeSelectionAction::Back;
     }
 
