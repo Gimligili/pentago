@@ -17,6 +17,8 @@ pub fn window_conf() -> Conf {
         window_height: DEFAULT_HEIGHT,
         fullscreen: false,
         window_resizable: false,
+        high_dpi: true,
+        sample_count: 4,
         icon: Some(icon),
         ..Default::default()
     }

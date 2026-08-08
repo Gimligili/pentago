@@ -109,7 +109,11 @@ impl DisplayContext {
 
     pub fn set_resolution(&mut self, resolution: Resolution) {
         self.resolution = resolution;
-        resolution.apply();
+
+        if self.window_mode == WindowMode::Windowed {
+            let (width, height) = resolution.size();
+            request_new_screen_size(width, height);
+        }
     }
 
     pub fn set_window_mode(&mut self, mode: WindowMode) {

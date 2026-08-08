@@ -75,14 +75,14 @@ impl<'a> Checkbox<'a> {
             draw_line(
                 rect.x + margin,
                 rect.y + rect.h / 2.0,
-                rect.x + rect.w * 0.42,
+                rect.x + rect.w * 0.4,
                 rect.y + rect.h - margin,
                 3.0 * display.scale,
                 WHITE,
             );
 
             draw_line(
-                rect.x + rect.w * 0.42,
+                rect.x + rect.w * 0.35,
                 rect.y + rect.h - margin,
                 rect.x + rect.w - margin,
                 rect.y + margin,
