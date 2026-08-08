@@ -1,0 +1,32 @@
+[project]
+name = "pentago_ai"
+version = "0.1.0"
+description = "Maturin binding for Pentago Rust Game engine"
+readme = "README.md"
+authors = []
+requires-python = ">=3.13"
+dependencies = [
+    "numpy>=2.5.1",
+    "torch>=2.13.0",
+]
+
+
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[tool.maturin]
+features = ["python_binding"]
+python-source = "python"
+module-name = "pentago_ai.pentago_engine"
+
+[tool.uv]
+reinstall-package = ["pentago_ai"]
+no-build-isolation-package = ["pentago_ai"]
+
+[dependency-groups]
+dev = ["pytest>=9.1.1"]
+
+[tool.pytest.ini_options]
+pythonpath = ["python"]
+testpaths = ["python/pentago_ai/tests"]
