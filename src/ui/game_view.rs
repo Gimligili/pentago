@@ -214,7 +214,12 @@ fn draw_rotation_buttons(textures: &GameTextures, display: &DisplayContext) {
     );
 }
 
-fn draw_game_status(game: &Game, view_state: &GameViewState, display: &DisplayContext) {
+fn draw_game_status(
+    game: &Game,
+    view_state: &GameViewState,
+    display: &DisplayContext,
+    font: &Font,
+) {
     let player_text = match game.current_player {
         CellState::White => "White player's turn",
         CellState::Black => "Black player's turn",
@@ -234,20 +239,28 @@ fn draw_game_status(game: &Game, view_state: &GameViewState, display: &DisplayCo
         TurnState::RotationDone => "Press 'Enter' to confirm or click 'right-click' to cancel",
     };
 
-    draw_text(
+    draw_text_ex(
         player_text,
         display.x(30.0),
         display.y(35.0),
-        40.0 * display.scale,
-        WHITE,
+        TextParams {
+            font: Some(font),
+            font_size: (40.0 * display.scale) as u16,
+            color: WHITE,
+            ..Default::default()
+        },
     );
 
-    draw_text(
+    draw_text_ex(
         action_text,
         display.x(30.0),
         display.y(70.0),
-        25.0 * display.scale,
-        GRAY,
+        TextParams {
+            font: Some(font),
+            font_size: (25.0 * display.scale) as u16,
+            color: GRAY,
+            ..Default::default()
+        },
     );
 }
 
@@ -256,6 +269,7 @@ pub fn draw_game(
     textures: &GameTextures,
     view_state: &GameViewState,
     display: &DisplayContext,
+    font: &Font,
 ) {
     let board = board_origin(display);
 
@@ -267,7 +281,7 @@ pub fn draw_game(
 
     let board_corner_radius = BOARD_CORNER_RADIUS_REF * display.scale;
 
-    draw_game_status(game, view_state, display);
+    draw_game_status(game, view_state, display, font);
 
     // Background/support behind the four tiles
     draw_rounded_rectangle(

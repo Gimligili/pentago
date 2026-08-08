@@ -26,6 +26,7 @@ async fn main() {
     let font = load_ttf_font("./ui_assets/button.ttf").await.unwrap();
     let game_textures = ui::game_view::GameTextures::load().await;
     let mut display = DisplayContext::new();
+    let mut options_state = ui::options::OptionsPopupState::new(&display);
 
     request_new_screen_size(1280.0, 720.0);
 
@@ -38,19 +39,26 @@ async fn main() {
         clear_background(BLEU_NUIT);
 
         match app_state {
-            AppState::MainMenu => match ui::main_menu::draw_main_menu(&font, &display) {
-                MainMenuAction::None => {}
+            AppState::MainMenu => {
+                match ui::main_menu::draw_main_menu(&font, &display, !options_state.open) {
+                    MainMenuAction::None => {}
 
-                MainMenuAction::Play => {
-                    app_state = AppState::ModeSelection;
+                    MainMenuAction::Play => {
+                        app_state = AppState::ModeSelection;
+                    }
+
+                    MainMenuAction::Options => {
+                        options_state.open(&display);
+                    }
+
+                    MainMenuAction::Quit => {
+                        return;
+                    }
+                };
+                if options_state.open {
+                    ui::options::draw_options_popup(&mut options_state, &font, &mut display);
                 }
-
-                MainMenuAction::Options => {}
-
-                MainMenuAction::Quit => {
-                    return;
-                }
-            },
+            }
 
             AppState::ModeSelection => {
                 match ui::mode_selection::draw_mode_selection(&font, &display) {
@@ -77,6 +85,7 @@ async fn main() {
                     &game_textures,
                     &mut game_view_state,
                     &display,
+                    &font,
                 ) {
                     app_state = AppState::GameOver;
                 }

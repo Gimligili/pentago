@@ -13,8 +13,9 @@ pub fn update_game_screen(
     textures: &GameTextures,
     view_state: &mut GameViewState,
     display: &DisplayContext,
+    font: &Font,
 ) -> bool {
-    game_view::draw_game(game, textures, view_state, display);
+    game_view::draw_game(game, textures, view_state, display, font);
 
     let ai_turn =
         game.game_mode == GameMode::PlayerVsAI && game.current_player == game::CellState::Black;
