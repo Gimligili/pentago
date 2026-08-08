@@ -14,14 +14,15 @@ pub enum MainMenuAction {
 pub fn draw_main_menu(font: &Font, display: &DisplayContext, interactive: bool) -> MainMenuAction {
     let mut action = MainMenuAction::None;
 
+    let title_text = "Pentago";
     let title_font_size = (120.0 * display.scale) as u16;
-    let title_size = measure_text("Pentago", Some(font), title_font_size, 1.0);
+    let title_size = measure_text(title_text, Some(font), title_font_size, 1.0);
 
     let title_x = (display.width - title_size.width) / 2.0;
     let title_y = display.y(120.0);
 
     draw_text_ex(
-        "Pentago",
+        title_text,
         title_x,
         title_y,
         TextParams {
