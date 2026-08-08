@@ -18,6 +18,12 @@ impl Cell {
     }
 }
 
+impl Default for Cell {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TileRotation {
     Clockwise,
@@ -92,6 +98,12 @@ impl Tile {
         self.cells[row][column].state = CellState::Empty;
 
         Ok(())
+    }
+}
+
+impl Default for Tile {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

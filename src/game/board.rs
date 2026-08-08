@@ -79,3 +79,9 @@ impl Board {
         matrix
     }
 }
+
+impl Default for Board {
+    fn default() -> Self {
+        Self::new()
+    }
+}
