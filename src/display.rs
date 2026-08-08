@@ -4,6 +4,23 @@ pub const REFERENCE_WIDTH: f32 = 800.0;
 pub const REFERENCE_HEIGHT: f32 = 600.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WindowMode {
+    Windowed,
+    Fullscreen,
+}
+
+impl WindowMode {
+    pub const ALL: [WindowMode; 2] = [WindowMode::Windowed, WindowMode::Fullscreen];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            WindowMode::Windowed => "Windowed",
+            WindowMode::Fullscreen => "Fullscreen",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Resolution {
     R800x600,
     R1024x768,
@@ -61,6 +78,7 @@ pub struct DisplayContext {
     pub height: f32,
     pub scale: f32,
     pub resolution: Resolution,
+    pub window_mode: WindowMode,
 }
 
 impl DisplayContext {
@@ -75,6 +93,7 @@ impl DisplayContext {
             height,
             scale: (width / REFERENCE_WIDTH).min(height / REFERENCE_HEIGHT),
             resolution,
+            window_mode: WindowMode::Windowed,
         }
     }
 
@@ -91,6 +110,23 @@ impl DisplayContext {
     pub fn set_resolution(&mut self, resolution: Resolution) {
         self.resolution = resolution;
         resolution.apply();
+    }
+
+    pub fn set_window_mode(&mut self, mode: WindowMode) {
+        match mode {
+            WindowMode::Windowed => {
+                set_fullscreen(false);
+
+                let (width, height) = self.resolution.size();
+                request_new_screen_size(width, height);
+            }
+
+            WindowMode::Fullscreen => {
+                set_fullscreen(true);
+            }
+        }
+
+        self.window_mode = mode;
     }
 
     pub fn x(&self, reference_x: f32) -> f32 {

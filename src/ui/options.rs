@@ -1,7 +1,8 @@
 use macroquad::prelude::*;
 
-use crate::display::{DisplayContext, Resolution};
+use crate::display::{DisplayContext, Resolution, WindowMode};
 use crate::ui::components::button::Button;
+use crate::ui::components::checkbox::Checkbox;
 use crate::ui::components::dropdown::{Dropdown, DropdownState};
 
 const POPUP_WIDTH_REF: f32 = 500.0;
@@ -20,6 +21,7 @@ pub struct OptionsPopupState {
     pub open: bool,
     pub selected_resolution_index: usize,
     pub resolution_dropdown: DropdownState,
+    pub fullscreen: bool,
 }
 
 fn resolution_index(display_resolution: Resolution) -> usize {
@@ -36,6 +38,7 @@ impl OptionsPopupState {
             open: false,
             selected_resolution_index,
             resolution_dropdown: DropdownState::new(),
+            fullscreen: display.window_mode == WindowMode::Fullscreen,
         }
     }
 
@@ -43,6 +46,7 @@ impl OptionsPopupState {
         self.open = true;
         self.selected_resolution_index = resolution_index(display.resolution);
         self.resolution_dropdown.open = false;
+        self.fullscreen = display.window_mode == WindowMode::Fullscreen;
     }
 
     pub fn close(&mut self) {
@@ -142,6 +146,19 @@ pub fn draw_options_popup(
         &mut state.selected_resolution_index,
     );
 
+    let mut fullscreen_checkbox = Checkbox::new(
+        vec2(popup.x + 50.0 * scale, popup.y + 220.0 * scale),
+        "Fullscreen",
+        state.fullscreen,
+    );
+
+    fullscreen_checkbox.enabled = !state.resolution_dropdown.open;
+
+    fullscreen_checkbox.update(display);
+    fullscreen_checkbox.draw(font, display);
+
+    state.fullscreen = fullscreen_checkbox.checked;
+
     // Buttons
     let button_width = BUTTON_WIDTH_REF * scale;
     let button_height = BUTTON_HEIGHT_REF * scale;
@@ -185,8 +202,14 @@ pub fn draw_options_popup(
 
     if apply_button.is_clicked() {
         let selected_resolution = Resolution::ALL[state.selected_resolution_index];
-
         display.set_resolution(selected_resolution);
+
+        let window_mode = if state.fullscreen {
+            WindowMode::Fullscreen
+        } else {
+            WindowMode::Windowed
+        };
+        display.set_window_mode(window_mode);
     }
 
     if close_button.is_clicked() {
