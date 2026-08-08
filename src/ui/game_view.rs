@@ -1,8 +1,8 @@
 use macroquad::prelude::*;
 
-use super::game_screen_state::{AiTurnState, GameScreenState, RotationAnimation};
+use super::game_screen_state::{GameScreenState, RotationAnimation};
 use crate::display::DisplayContext;
-use crate::game::{CellState, Game, Placement, TileRotation, TurnState};
+use crate::game::{CellState, Game, GameMode, Placement, TileRotation, TurnState};
 
 const BOARD_BACKGROUND: Color = Color::from_rgba(45, 30, 20, 255);
 
@@ -449,13 +449,13 @@ pub fn draw_game(
     font: &Font,
 ) {
     let board = board_origin(display);
+    let human_turn =
+        game.game_mode == GameMode::PlayerVsPlayer || game.current_player == CellState::White;
 
     let tile_size = tile_size(display);
     let tile_gap = tile_gap(display);
     let board_size = board_size(display);
-
     let board_padding = BOARD_PADDING_REF * display.scale;
-
     let board_corner_radius = BOARD_CORNER_RADIUS_REF * display.scale;
 
     draw_game_status(game, game_screen_state, display, font);
@@ -508,33 +508,33 @@ pub fn draw_game(
         draw_rotating_tile(game, textures, animation, display);
     }
 
-    if game.state == TurnState::WaitingForRotation
-        && matches!(game_screen_state.ai_turn_state, AiTurnState::Idle)
-    {
-        if let Some((tile_row, tile_column)) = game_screen_state.selected_tile {
-            draw_tile_highlight(
-                tile_row,
-                tile_column,
-                board,
-                display,
-                GOLD,
-                4.0 * display.scale,
-            );
+    if human_turn {
+        if game.state == TurnState::WaitingForRotation {
+            if let Some((tile_row, tile_column)) = game_screen_state.selected_tile {
+                draw_tile_highlight(
+                    tile_row,
+                    tile_column,
+                    board,
+                    display,
+                    GOLD,
+                    4.0 * display.scale,
+                );
 
-            draw_rotation_buttons(textures, display);
-        } else if let Some((tile_row, tile_column)) = crate::ui::input::hovered_tile(display) {
-            draw_tile_highlight(
-                tile_row,
-                tile_column,
-                board,
-                display,
-                Color::from_rgba(180, 180, 180, 160),
-                3.0 * display.scale,
-            );
+                draw_rotation_buttons(textures, display);
+            } else if let Some((tile_row, tile_column)) = crate::ui::input::hovered_tile(display) {
+                draw_tile_highlight(
+                    tile_row,
+                    tile_column,
+                    board,
+                    display,
+                    Color::from_rgba(180, 180, 180, 160),
+                    3.0 * display.scale,
+                );
+            }
+        } else if game.state == TurnState::WaitingForPlacement
+            && let Some(placement) = crate::ui::input::hovered_placement(display)
+        {
+            draw_placement_preview(game, textures, &placement, display);
         }
-    } else if game.state == TurnState::WaitingForPlacement
-        && let Some(placement) = crate::ui::input::hovered_placement(display)
-    {
-        draw_placement_preview(game, textures, &placement, display);
     }
 }

@@ -56,8 +56,13 @@ pub fn update_game_screen(
 
     game_view::draw_game(game, textures, game_screen_state, display, font);
 
+    // The game is terminal: no more input or AI processing.
+    if game.game_status != GameStatus::Ongoing {
+        return true;
+    }
+
     if game_screen_state.rotation_animation.is_some() {
-        return game.game_status != GameStatus::Ongoing;
+        return false;
     }
 
     let ai_turn =
@@ -108,7 +113,6 @@ fn handle_ai_turn(game: &mut Game, screen_state: &mut GameScreenState) {
                 return;
             }
 
-            // Placement itself may already win the game.
             if game.game_status != GameStatus::Ongoing {
                 screen_state.ai_turn_state = AiTurnState::Idle;
                 return;
@@ -147,13 +151,11 @@ fn handle_ai_turn(game: &mut Game, screen_state: &mut GameScreenState) {
                 return;
             }
 
-            // update_rotation_animation() has now called game.rotate(),
-            // therefore the game must be in RotationDone.
-            if game.state == TurnState::RotationDone {
-                if let Err(error) = game.validate() {
-                    println!("{error}");
-                    return;
-                }
+            if game.state == TurnState::RotationDone
+                && let Err(error) = game.validate()
+            {
+                println!("{error}");
+                return;
             }
 
             screen_state.ai_turn_state = AiTurnState::Idle;
@@ -161,14 +163,21 @@ fn handle_ai_turn(game: &mut Game, screen_state: &mut GameScreenState) {
     }
 }
 
-fn handle_human_turn(game: &mut Game, view_state: &mut GameScreenState, display: &DisplayContext) {
+fn handle_human_turn(
+    game: &mut Game,
+    game_screen_state: &mut GameScreenState,
+    display: &DisplayContext,
+) {
     if is_mouse_button_pressed(MouseButton::Right) {
+        if game.game_status != GameStatus::Ongoing {
+            return;
+        }
         if game.state == TurnState::RotationDone
             && let game::PlayerAction::Rotation(last_rotation) = &game.last_action
         {
             let opposite_orientation = last_rotation.rotation_orientation.opposite();
 
-            view_state.rotation_animation = Some(RotationAnimation {
+            game_screen_state.rotation_animation = Some(RotationAnimation {
                 tile_row: last_rotation.tile_row,
                 tile_column: last_rotation.tile_column,
                 orientation: opposite_orientation,
@@ -179,7 +188,7 @@ fn handle_human_turn(game: &mut Game, view_state: &mut GameScreenState, display:
         }
 
         game.cancel_action();
-        view_state.selected_tile = None;
+        game_screen_state.selected_tile = None;
         return;
     }
 
@@ -201,7 +210,7 @@ fn handle_human_turn(game: &mut Game, view_state: &mut GameScreenState, display:
         }
 
         TurnState::WaitingForRotation => {
-            handle_rotation_selection(view_state, display);
+            handle_rotation_selection(game_screen_state, display);
         }
 
         TurnState::RotationDone => {
@@ -214,25 +223,25 @@ fn handle_human_turn(game: &mut Game, view_state: &mut GameScreenState, display:
     }
 }
 
-fn handle_rotation_selection(view_state: &mut GameScreenState, display: &DisplayContext) {
+fn handle_rotation_selection(game_screen_state: &mut GameScreenState, display: &DisplayContext) {
     if let Some(clicked_tile) = input::clicked_tile(display) {
-        if view_state.selected_tile == Some(clicked_tile) {
-            view_state.selected_tile = None;
+        if game_screen_state.selected_tile == Some(clicked_tile) {
+            game_screen_state.selected_tile = None;
         } else {
-            view_state.selected_tile = Some(clicked_tile);
+            game_screen_state.selected_tile = Some(clicked_tile);
         }
     }
 
-    if let Some((tile_row, tile_column)) = view_state.selected_tile
+    if let Some((tile_row, tile_column)) = game_screen_state.selected_tile
         && let Some(rotation_orientation) = input::clicked_rotation(display)
     {
-        view_state.rotation_animation = Some(RotationAnimation {
+        game_screen_state.rotation_animation = Some(RotationAnimation {
             tile_row,
             tile_column,
             orientation: rotation_orientation,
             progress: 0.0,
         });
 
-        view_state.selected_tile = None;
+        game_screen_state.selected_tile = None;
     }
 }

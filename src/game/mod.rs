@@ -4,7 +4,7 @@ pub mod rules;
 pub mod tile;
 
 pub use board::{Board, Placement, Rotation};
-pub use rules::update_game_status;
+pub use rules::{check_winner, update_game_status};
 pub use tile::{CellState, Tile, TileRotation};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -64,32 +64,39 @@ impl Game {
         }
     }
 
-    pub fn place(&mut self, placement: Placement) -> Result<(), &'static str> {
-        if self.state == TurnState::WaitingForPlacement {
-            self.board.place(&placement, self.current_player)?;
-            self.last_action = PlayerAction::Placement(placement);
-            self.state = TurnState::PlacementDone;
-            Ok(())
-        } else {
-            Err("Action not allowed in this state of the game !")
+    fn check_victory(&mut self) {
+        if check_winner(&self.board, CellState::White) {
+            self.game_status = GameStatus::WhiteWins;
+        } else if check_winner(&self.board, CellState::Black) {
+            self.game_status = GameStatus::BlackWins;
         }
+    }
+
+    pub fn place(&mut self, placement: Placement) -> Result<(), &'static str> {
+        if self.state != TurnState::WaitingForPlacement {
+            return Err("Action not allowed in this state of the game !");
+        }
+
+        self.board.place(&placement, self.current_player)?;
+        self.last_action = PlayerAction::Placement(placement);
+        self.state = TurnState::PlacementDone;
+        self.check_victory();
+        Ok(())
     }
 
     pub fn rotate(&mut self, rotation: Rotation) -> Result<(), &'static str> {
-        if self.state == TurnState::WaitingForRotation {
-            self.board.rotate_tile(&rotation)?;
-            self.last_action = PlayerAction::Rotation(rotation);
-            self.state = TurnState::RotationDone;
-            Ok(())
-        } else {
-            Err("Action not allowed in this state of the game !")
+        if self.state != TurnState::WaitingForRotation {
+            return Err("Action not allowed in this state of the game !");
         }
+        self.board.rotate_tile(&rotation)?;
+        self.last_action = PlayerAction::Rotation(rotation);
+        self.state = TurnState::RotationDone;
+        self.check_victory();
+        Ok(())
     }
 
     pub fn validate(&mut self) -> Result<(), &'static str> {
-        let game_status = update_game_status(&self.board);
-        if game_status != GameStatus::Ongoing {
-            self.game_status = game_status;
+        if self.game_status != GameStatus::Ongoing {
             return Ok(());
         }
 
@@ -102,6 +109,11 @@ impl Game {
                 Ok(())
             }
             TurnState::RotationDone => {
+                self.game_status = update_game_status(&self.board);
+
+                if self.game_status != GameStatus::Ongoing {
+                    return Ok(());
+                }
                 let next_player = match self.current_player {
                     CellState::Black => CellState::White,
                     CellState::White => CellState::Black,
@@ -116,6 +128,9 @@ impl Game {
     }
 
     pub fn cancel_action(&mut self) {
+        if self.game_status != GameStatus::Ongoing {
+            return;
+        }
         match &self.state {
             TurnState::PlacementDone => {
                 if let PlayerAction::Placement(ref last_placement) = self.last_action {
