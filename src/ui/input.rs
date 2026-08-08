@@ -1,7 +1,7 @@
 use macroquad::prelude::*;
 
 use crate::display::DisplayContext;
-use crate::game::{Placement, TileRotation};
+use pentago_engine::game::{Placement, TileRotation};
 
 use super::game_view::{board_origin, board_size, rotation_buttons_rect, tile_gap, tile_size};
 

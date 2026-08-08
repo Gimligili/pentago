@@ -6,7 +6,7 @@ use super::{
     input,
 };
 use crate::display::DisplayContext;
-use crate::game::{self, Game, GameMode, GameStatus, TurnState};
+use pentago_engine::game::{self, Game, GameMode, GameStatus, TurnState};
 
 const AI_THINKING_DURATION: f32 = 0.5;
 const AI_PLACEMENT_DURATION: f32 = 0.6;

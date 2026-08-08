@@ -2,7 +2,7 @@ use macroquad::prelude::*;
 
 use super::game_screen_state::{GameScreenState, RotationAnimation};
 use crate::display::DisplayContext;
-use crate::game::{CellState, Game, GameMode, Placement, TileRotation, TurnState};
+use pentago_engine::game::{CellState, Game, GameMode, Placement, TileRotation, TurnState};
 
 const BOARD_BACKGROUND: Color = Color::from_rgba(45, 30, 20, 255);
 

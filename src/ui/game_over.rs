@@ -1,8 +1,8 @@
 use macroquad::prelude::*;
 
 use crate::display::DisplayContext;
-use crate::game::GameStatus;
 use crate::ui::components::button::Button;
+use pentago_engine::game::GameStatus;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GameOverAction {

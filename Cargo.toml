@@ -3,6 +3,10 @@ name = "pentago"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "pentago_engine"
+crate-type = ["rlib", "cdylib"]
+
 [[bin]]
 name = "pentago"
 path = "src/pentago.rs"

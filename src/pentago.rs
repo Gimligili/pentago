@@ -1,13 +1,12 @@
 use macroquad::prelude::*;
 mod display;
-mod game;
 mod init;
 mod ui;
 
-use init::window_conf;
-
 use crate::display::DisplayContext;
 use crate::ui::main_menu::MainMenuAction;
+use init::window_conf;
+use pentago_engine::game;
 
 use ui::{game_over::GameOverAction, mode_selection::ModeSelectionAction};
 

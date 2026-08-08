@@ -1,4 +1,4 @@
-use crate::game::{Rotation, TileRotation};
+use pentago_engine::game::{Rotation, TileRotation};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RotationAnimation {
