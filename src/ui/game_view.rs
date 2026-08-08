@@ -392,16 +392,13 @@ fn draw_rotating_tile(
     set_default_camera();
 
     let board = board_origin(display);
-
     let tile_size = tile_size(display);
     let tile_gap = tile_gap(display);
 
     let x = board.x + animation.tile_column as f32 * (tile_size + tile_gap);
-
     let y = board.y + animation.tile_row as f32 * (tile_size + tile_gap);
 
     let eased = animation_smoothstep(animation.progress);
-
     let angle = match animation.orientation {
         TileRotation::Clockwise => std::f32::consts::FRAC_PI_2 * eased,
 
@@ -416,6 +413,7 @@ fn draw_rotating_tile(
         DrawTextureParams {
             dest_size: Some(vec2(tile_size, tile_size)),
             rotation: angle,
+            flip_y: true,
             ..Default::default()
         },
     );
