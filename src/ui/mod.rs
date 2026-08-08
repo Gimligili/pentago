@@ -1,6 +1,7 @@
 pub mod components;
 pub mod game_over;
 pub mod game_screen;
+pub mod game_screen_state;
 pub mod game_view;
 pub mod input;
 pub mod main_menu;

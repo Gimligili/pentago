@@ -32,7 +32,7 @@ async fn main() {
 
     let mut app_state = AppState::MainMenu;
     let mut game = game::Game::new(game::GameMode::PlayerVsPlayer);
-    let mut game_view_state = ui::game_view::GameViewState::new();
+    let mut game_screen_state = ui::game_screen_state::GameScreenState::new();
 
     loop {
         display.refresh();
@@ -65,12 +65,12 @@ async fn main() {
                     ModeSelectionAction::None => {}
                     ModeSelectionAction::PlayerVsPlayer => {
                         game = game::Game::new(game::GameMode::PlayerVsPlayer);
-                        game_view_state = ui::game_view::GameViewState::new();
+                        game_screen_state = ui::game_screen_state::GameScreenState::new();
                         app_state = AppState::Playing;
                     }
                     ModeSelectionAction::PlayerVsAI => {
                         game = game::Game::new(game::GameMode::PlayerVsAI);
-                        game_view_state = ui::game_view::GameViewState::new();
+                        game_screen_state = ui::game_screen_state::GameScreenState::new();
                         app_state = AppState::Playing;
                     }
                     ModeSelectionAction::Back => {
@@ -83,7 +83,7 @@ async fn main() {
                 if ui::game_screen::update_game_screen(
                     &mut game,
                     &game_textures,
-                    &mut game_view_state,
+                    &mut game_screen_state,
                     &display,
                     &font,
                 ) {
@@ -99,13 +99,13 @@ async fn main() {
                         let mode = game.game_mode;
 
                         game = game::Game::new(mode);
-                        game_view_state = ui::game_view::GameViewState::new();
+                        game_screen_state = ui::game_screen_state::GameScreenState::new();
 
                         app_state = AppState::Playing;
                     }
 
                     GameOverAction::MainMenu => {
-                        game_view_state = ui::game_view::GameViewState::new();
+                        game_screen_state = ui::game_screen_state::GameScreenState::new();
                         app_state = AppState::MainMenu;
                     }
                 }

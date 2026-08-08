@@ -1,5 +1,6 @@
 use macroquad::prelude::*;
 
+use super::game_screen_state::{AiTurnState, GameScreenState, RotationAnimation};
 use crate::display::DisplayContext;
 use crate::game::{CellState, Game, Placement, TileRotation, TurnState};
 
@@ -20,35 +21,6 @@ const ROTATION_BUTTON_HEIGHT_REF: f32 = 25.0;
 const ROTATION_BUTTON_MARGIN_REF: f32 = 24.0;
 const ROTATION_BUTTON_GAP_REF: f32 = 16.0;
 pub const ROTATION_ANIMATION_DURATION: f32 = 0.30;
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct RotationAnimation {
-    pub tile_row: usize,
-    pub tile_column: usize,
-    pub orientation: TileRotation,
-    pub progress: f32,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct GameViewState {
-    pub selected_tile: Option<(usize, usize)>,
-    pub rotation_animation: Option<RotationAnimation>,
-}
-
-impl Default for GameViewState {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl GameViewState {
-    pub fn new() -> Self {
-        Self {
-            selected_tile: None,
-            rotation_animation: None,
-        }
-    }
-}
 
 pub struct GameTextures {
     pub tile: Texture2D,
@@ -421,7 +393,7 @@ fn draw_rotating_tile(
 
 fn draw_game_status(
     game: &Game,
-    view_state: &GameViewState,
+    game_screen_state: &GameScreenState,
     display: &DisplayContext,
     font: &Font,
 ) {
@@ -435,7 +407,7 @@ fn draw_game_status(
         TurnState::WaitingForPlacement => "Place a marble",
         TurnState::PlacementDone => "Press 'Enter' to confirm or click 'right-click' to cancel",
         TurnState::WaitingForRotation => {
-            if view_state.selected_tile.is_some() {
+            if game_screen_state.selected_tile.is_some() {
                 "Choose selected tile rotation direction"
             } else {
                 "Select a tile to rotate"
@@ -472,7 +444,7 @@ fn draw_game_status(
 pub fn draw_game(
     game: &Game,
     textures: &GameTextures,
-    view_state: &GameViewState,
+    game_screen_state: &GameScreenState,
     display: &DisplayContext,
     font: &Font,
 ) {
@@ -486,7 +458,7 @@ pub fn draw_game(
 
     let board_corner_radius = BOARD_CORNER_RADIUS_REF * display.scale;
 
-    draw_game_status(game, view_state, display, font);
+    draw_game_status(game, game_screen_state, display, font);
 
     // Background/support behind the four tiles
     draw_rounded_rectangle(
@@ -504,12 +476,13 @@ pub fn draw_game(
             let pos_x = board.x + tile_column as f32 * (tile_size + tile_gap);
             let pos_y = board.y + tile_row as f32 * (tile_size + tile_gap);
 
-            let is_animated = view_state
-                .rotation_animation
-                .as_ref()
-                .is_some_and(|animation| {
-                    animation.tile_row == tile_row && animation.tile_column == tile_column
-                });
+            let is_animated =
+                game_screen_state
+                    .rotation_animation
+                    .as_ref()
+                    .is_some_and(|animation| {
+                        animation.tile_row == tile_row && animation.tile_column == tile_column
+                    });
 
             if is_animated {
                 continue;
@@ -531,12 +504,14 @@ pub fn draw_game(
     }
 
     // Handle rotation animation if needed
-    if let Some(animation) = &view_state.rotation_animation {
+    if let Some(animation) = &game_screen_state.rotation_animation {
         draw_rotating_tile(game, textures, animation, display);
     }
 
-    if game.state == TurnState::WaitingForRotation {
-        if let Some((tile_row, tile_column)) = view_state.selected_tile {
+    if game.state == TurnState::WaitingForRotation
+        && matches!(game_screen_state.ai_turn_state, AiTurnState::Idle)
+    {
+        if let Some((tile_row, tile_column)) = game_screen_state.selected_tile {
             draw_tile_highlight(
                 tile_row,
                 tile_column,

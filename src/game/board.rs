@@ -10,7 +10,7 @@ pub struct Placement {
     pub column: usize,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Rotation {
     pub tile_row: usize,
     pub tile_column: usize,
