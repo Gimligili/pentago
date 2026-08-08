@@ -9,17 +9,6 @@ pub enum WindowMode {
     Fullscreen,
 }
 
-impl WindowMode {
-    pub const ALL: [WindowMode; 2] = [WindowMode::Windowed, WindowMode::Fullscreen];
-
-    pub fn label(self) -> &'static str {
-        match self {
-            WindowMode::Windowed => "Windowed",
-            WindowMode::Fullscreen => "Fullscreen",
-        }
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Resolution {
     R800x600,
@@ -64,11 +53,6 @@ impl Resolution {
             Resolution::R1600x900 => "1600 x 900",
             Resolution::R1920x1080 => "1920 x 1080",
         }
-    }
-
-    pub fn apply(self) {
-        let (width, height) = self.size();
-        request_new_screen_size(width, height);
     }
 }
 
