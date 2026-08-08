@@ -1,7 +1,7 @@
 use macroquad::prelude::*;
 
 use crate::display::DisplayContext;
-use crate::game::{CellState, Game, Placement, TurnState};
+use crate::game::{CellState, Game, Placement, TileRotation, TurnState};
 
 const BOARD_BACKGROUND: Color = Color::from_rgba(45, 30, 20, 255);
 
@@ -19,10 +19,20 @@ const ROTATION_BUTTON_WIDTH_REF: f32 = 60.0;
 const ROTATION_BUTTON_HEIGHT_REF: f32 = 25.0;
 const ROTATION_BUTTON_MARGIN_REF: f32 = 24.0;
 const ROTATION_BUTTON_GAP_REF: f32 = 16.0;
+pub const ROTATION_ANIMATION_DURATION: f32 = 0.30;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct RotationAnimation {
+    pub tile_row: usize,
+    pub tile_column: usize,
+    pub orientation: TileRotation,
+    pub progress: f32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GameViewState {
     pub selected_tile: Option<(usize, usize)>,
+    pub rotation_animation: Option<RotationAnimation>,
 }
 
 impl Default for GameViewState {
@@ -35,6 +45,7 @@ impl GameViewState {
     pub fn new() -> Self {
         Self {
             selected_tile: None,
+            rotation_animation: None,
         }
     }
 }
@@ -44,6 +55,7 @@ pub struct GameTextures {
     pub white_marble: Texture2D,
     pub black_marble: Texture2D,
     pub rotation_arrow: Texture2D,
+    pub tile_render_target: RenderTarget,
 }
 
 async fn load_texture_with_transparency(path: &str) -> Texture2D {
@@ -64,11 +76,15 @@ async fn load_texture_with_transparency(path: &str) -> Texture2D {
 
 impl GameTextures {
     pub async fn load() -> Self {
+        let tile_render_target = render_target(TILE_SIZE_REF as u32, TILE_SIZE_REF as u32);
+        tile_render_target.texture.set_filter(FilterMode::Linear);
+
         Self {
             tile: load_texture_with_transparency("ui_assets/tile.png").await,
             white_marble: load_texture_with_transparency("ui_assets/sphere_white.png").await,
             black_marble: load_texture_with_transparency("ui_assets/sphere_black.png").await,
             rotation_arrow: load_texture_with_transparency("ui_assets/arrow.png").await,
+            tile_render_target,
         }
     }
 }
@@ -301,6 +317,110 @@ fn draw_rotation_buttons(textures: &GameTextures, display: &DisplayContext) {
     );
 }
 
+fn animation_smoothstep(t: f32) -> f32 {
+    t * t * (3.0 - 2.0 * t)
+}
+
+fn draw_tile_marbles_to_target(
+    game: &Game,
+    textures: &GameTextures,
+    tile_row: usize,
+    tile_column: usize,
+) {
+    let cell_size = TILE_SIZE_REF / 3.0;
+
+    let marble_size = cell_size * MARBLE_RATIO;
+
+    for row in 0..3 {
+        for column in 0..3 {
+            let state = game.board.tiles[tile_row][tile_column].cells[row][column].state;
+
+            let texture = match state {
+                CellState::Empty => continue,
+                CellState::White => &textures.white_marble,
+                CellState::Black => &textures.black_marble,
+            };
+
+            let x = column as f32 * cell_size + (cell_size - marble_size) / 2.0;
+
+            let y = row as f32 * cell_size + (cell_size - marble_size) / 2.0;
+
+            draw_texture_ex(
+                texture,
+                x,
+                y,
+                WHITE,
+                DrawTextureParams {
+                    dest_size: Some(vec2(marble_size, marble_size)),
+                    ..Default::default()
+                },
+            );
+        }
+    }
+}
+
+fn draw_rotating_tile(
+    game: &Game,
+    textures: &GameTextures,
+    animation: &RotationAnimation,
+    display: &DisplayContext,
+) {
+    let target_size = TILE_SIZE_REF;
+
+    let mut camera = Camera2D::from_display_rect(Rect::new(0.0, 0.0, target_size, target_size));
+
+    camera.render_target = Some(textures.tile_render_target.clone());
+    set_camera(&camera);
+
+    // Transparent render target background
+    clear_background(Color::new(0.0, 0.0, 0.0, 0.0));
+
+    // Tile
+    draw_texture_ex(
+        &textures.tile,
+        0.0,
+        0.0,
+        WHITE,
+        DrawTextureParams {
+            dest_size: Some(vec2(target_size, target_size)),
+            ..Default::default()
+        },
+    );
+
+    draw_tile_marbles_to_target(game, textures, animation.tile_row, animation.tile_column);
+
+    set_default_camera();
+
+    let board = board_origin(display);
+
+    let tile_size = tile_size(display);
+    let tile_gap = tile_gap(display);
+
+    let x = board.x + animation.tile_column as f32 * (tile_size + tile_gap);
+
+    let y = board.y + animation.tile_row as f32 * (tile_size + tile_gap);
+
+    let eased = animation_smoothstep(animation.progress);
+
+    let angle = match animation.orientation {
+        TileRotation::Clockwise => std::f32::consts::FRAC_PI_2 * eased,
+
+        TileRotation::CounterClockwise => -std::f32::consts::FRAC_PI_2 * eased,
+    };
+
+    draw_texture_ex(
+        &textures.tile_render_target.texture,
+        x,
+        y,
+        WHITE,
+        DrawTextureParams {
+            dest_size: Some(vec2(tile_size, tile_size)),
+            rotation: angle,
+            ..Default::default()
+        },
+    );
+}
+
 fn draw_game_status(
     game: &Game,
     view_state: &GameViewState,
@@ -384,8 +504,18 @@ pub fn draw_game(
     for tile_row in 0..2 {
         for tile_column in 0..2 {
             let pos_x = board.x + tile_column as f32 * (tile_size + tile_gap);
-
             let pos_y = board.y + tile_row as f32 * (tile_size + tile_gap);
+
+            let is_animated = view_state
+                .rotation_animation
+                .as_ref()
+                .is_some_and(|animation| {
+                    animation.tile_row == tile_row && animation.tile_column == tile_column
+                });
+
+            if is_animated {
+                continue;
+            }
 
             draw_texture_ex(
                 &textures.tile,
@@ -401,6 +531,12 @@ pub fn draw_game(
             draw_marble(game, textures, tile_row, tile_column, pos_x, pos_y, display);
         }
     }
+
+    // Handle rotation animation if needed
+    if let Some(animation) = &view_state.rotation_animation {
+        draw_rotating_tile(game, textures, animation, display);
+    }
+
     if game.state == TurnState::WaitingForRotation {
         if let Some((tile_row, tile_column)) = view_state.selected_tile {
             draw_tile_highlight(

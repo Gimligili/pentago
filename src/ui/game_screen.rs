@@ -4,9 +4,43 @@ use crate::display::DisplayContext;
 use crate::game::{self, Game, GameMode, GameStatus, TurnState};
 
 use super::{
-    game_view::{self, GameTextures, GameViewState},
+    game_view::{self, GameTextures, GameViewState, RotationAnimation},
     input,
 };
+
+fn update_rotation_animation(game: &mut Game, view_state: &mut GameViewState) {
+    let Some(animation) = &mut view_state.rotation_animation else {
+        return;
+    };
+
+    animation.progress += get_frame_time() / game_view::ROTATION_ANIMATION_DURATION;
+    animation.progress = animation.progress.min(1.0);
+    if animation.progress < 1.0 {
+        return;
+    }
+
+    match game.state {
+        TurnState::WaitingForRotation => {
+            let rotation = game::Rotation {
+                tile_row: animation.tile_row,
+                tile_column: animation.tile_column,
+                rotation_orientation: animation.orientation,
+            };
+
+            if let Err(error) = game.rotate(rotation) {
+                println!("{error}");
+            }
+        }
+
+        TurnState::RotationDone => {
+            game.cancel_action();
+        }
+
+        _ => {}
+    }
+
+    view_state.rotation_animation = None;
+}
 
 pub fn update_game_screen(
     game: &mut Game,
@@ -15,7 +49,13 @@ pub fn update_game_screen(
     display: &DisplayContext,
     font: &Font,
 ) -> bool {
+    update_rotation_animation(game, view_state);
+
     game_view::draw_game(game, textures, view_state, display, font);
+
+    if view_state.rotation_animation.is_some() {
+        return game.game_status != GameStatus::Ongoing;
+    }
 
     let ai_turn =
         game.game_mode == GameMode::PlayerVsAI && game.current_player == game::CellState::Black;
@@ -64,6 +104,21 @@ fn handle_ai_turn(game: &mut Game) {
 
 fn handle_human_turn(game: &mut Game, view_state: &mut GameViewState, display: &DisplayContext) {
     if is_mouse_button_pressed(MouseButton::Right) {
+        if game.state == TurnState::RotationDone
+            && let game::PlayerAction::Rotation(last_rotation) = &game.last_action
+        {
+            let opposite_orientation = last_rotation.rotation_orientation.opposite();
+
+            view_state.rotation_animation = Some(RotationAnimation {
+                tile_row: last_rotation.tile_row,
+                tile_column: last_rotation.tile_column,
+                orientation: opposite_orientation,
+                progress: 0.0,
+            });
+
+            return;
+        }
+
         game.cancel_action();
         view_state.selected_tile = None;
         return;
@@ -87,7 +142,7 @@ fn handle_human_turn(game: &mut Game, view_state: &mut GameViewState, display: &
         }
 
         TurnState::WaitingForRotation => {
-            handle_rotation_selection(game, view_state, display);
+            handle_rotation_selection(view_state, display);
         }
 
         TurnState::RotationDone => {
@@ -100,11 +155,7 @@ fn handle_human_turn(game: &mut Game, view_state: &mut GameViewState, display: &
     }
 }
 
-fn handle_rotation_selection(
-    game: &mut Game,
-    view_state: &mut GameViewState,
-    display: &DisplayContext,
-) {
+fn handle_rotation_selection(view_state: &mut GameViewState, display: &DisplayContext) {
     if let Some(clicked_tile) = input::clicked_tile(display) {
         if view_state.selected_tile == Some(clicked_tile) {
             view_state.selected_tile = None;
@@ -116,16 +167,13 @@ fn handle_rotation_selection(
     if let Some((tile_row, tile_column)) = view_state.selected_tile
         && let Some(rotation_orientation) = input::clicked_rotation(display)
     {
-        let rotation = game::Rotation {
+        view_state.rotation_animation = Some(RotationAnimation {
             tile_row,
             tile_column,
-            rotation_orientation,
-        };
+            orientation: rotation_orientation,
+            progress: 0.0,
+        });
 
-        if let Err(error) = game.rotate(rotation) {
-            println!("{error}");
-        } else {
-            view_state.selected_tile = None;
-        }
+        view_state.selected_tile = None;
     }
 }

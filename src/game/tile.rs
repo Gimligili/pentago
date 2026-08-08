@@ -24,6 +24,15 @@ pub enum TileRotation {
     CounterClockwise,
 }
 
+impl TileRotation {
+    pub fn opposite(self) -> Self {
+        match self {
+            TileRotation::Clockwise => TileRotation::CounterClockwise,
+            TileRotation::CounterClockwise => TileRotation::Clockwise,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Tile {
     pub cells: [[Cell; 3]; 3],
