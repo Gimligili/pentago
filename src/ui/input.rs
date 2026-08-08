@@ -5,11 +5,7 @@ use crate::game::{Placement, TileRotation};
 
 use super::game_view::{board_origin, board_size, rotation_buttons_rect, tile_gap, tile_size};
 
-pub fn clicked_placement(display: &DisplayContext) -> Option<Placement> {
-    if !is_mouse_button_pressed(MouseButton::Left) {
-        return None;
-    }
-
+pub fn hovered_placement(display: &DisplayContext) -> Option<Placement> {
     let (mouse_x, mouse_y) = mouse_position();
 
     let board = board_origin(display);
@@ -37,7 +33,7 @@ pub fn clicked_placement(display: &DisplayContext) -> Option<Placement> {
 
     let y_in_tile = local_y - tile_row as f32 * tile_stride;
 
-    // Ignore the gap between tiles
+    // Mouse is in the gap between tiles
     if x_in_tile >= tile_size || y_in_tile >= tile_size {
         return None;
     }
@@ -55,11 +51,15 @@ pub fn clicked_placement(display: &DisplayContext) -> Option<Placement> {
     })
 }
 
-pub fn clicked_tile(display: &DisplayContext) -> Option<(usize, usize)> {
+pub fn clicked_placement(display: &DisplayContext) -> Option<Placement> {
     if !is_mouse_button_pressed(MouseButton::Left) {
         return None;
     }
 
+    hovered_placement(display)
+}
+
+pub fn hovered_tile(display: &DisplayContext) -> Option<(usize, usize)> {
     let (mouse_x, mouse_y) = mouse_position();
 
     let board = board_origin(display);
@@ -93,6 +93,14 @@ pub fn clicked_tile(display: &DisplayContext) -> Option<(usize, usize)> {
     }
 
     Some((tile_row, tile_column))
+}
+
+pub fn clicked_tile(display: &DisplayContext) -> Option<(usize, usize)> {
+    if !is_mouse_button_pressed(MouseButton::Left) {
+        return None;
+    }
+
+    hovered_tile(display)
 }
 
 pub fn clicked_rotation(display: &DisplayContext) -> Option<TileRotation> {

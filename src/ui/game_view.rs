@@ -1,7 +1,7 @@
 use macroquad::prelude::*;
 
 use crate::display::DisplayContext;
-use crate::game::{CellState, Game, TurnState};
+use crate::game::{CellState, Game, Placement, TurnState};
 
 const BOARD_BACKGROUND: Color = Color::from_rgba(45, 30, 20, 255);
 
@@ -106,6 +106,87 @@ pub fn board_origin(display: &DisplayContext) -> Vec2 {
     )
 }
 
+fn cell_position(placement: &Placement, display: &DisplayContext) -> Vec2 {
+    let board = board_origin(display);
+
+    let tile_size = tile_size(display);
+    let tile_gap = tile_gap(display);
+    let cell_size = tile_size / 3.0;
+
+    vec2(
+        board.x
+            + placement.tile_column as f32 * (tile_size + tile_gap)
+            + placement.column as f32 * cell_size,
+        board.y
+            + placement.tile_row as f32 * (tile_size + tile_gap)
+            + placement.row as f32 * cell_size,
+    )
+}
+
+fn draw_invalid_placement_cross(cell_pos: Vec2, cell_size: f32, display: &DisplayContext) {
+    let margin = cell_size * 0.28;
+    let thickness = 5.0 * display.scale;
+
+    draw_line(
+        cell_pos.x + margin,
+        cell_pos.y + margin,
+        cell_pos.x + cell_size - margin,
+        cell_pos.y + cell_size - margin,
+        thickness,
+        RED,
+    );
+
+    draw_line(
+        cell_pos.x + cell_size - margin,
+        cell_pos.y + margin,
+        cell_pos.x + margin,
+        cell_pos.y + cell_size - margin,
+        thickness,
+        RED,
+    );
+}
+
+fn draw_placement_preview(
+    game: &Game,
+    textures: &GameTextures,
+    placement: &Placement,
+    display: &DisplayContext,
+) {
+    let tile_size = tile_size(display);
+    let cell_size = tile_size / 3.0;
+    let marble_size = cell_size * MARBLE_RATIO;
+
+    let cell_pos = cell_position(placement, display);
+
+    let marble_x = cell_pos.x + (cell_size - marble_size) / 2.0;
+
+    let marble_y = cell_pos.y + (cell_size - marble_size) / 2.0;
+
+    let cell = game.board.tiles[placement.tile_row][placement.tile_column].cells[placement.row]
+        [placement.column];
+
+    if cell.state == CellState::Empty {
+        let texture = match game.current_player {
+            CellState::White => &textures.white_marble,
+            CellState::Black => &textures.black_marble,
+            CellState::Empty => return,
+        };
+
+        draw_texture_ex(
+            texture,
+            marble_x,
+            marble_y,
+            Color::new(0.65, 0.65, 0.65, 0.55),
+            DrawTextureParams {
+                dest_size: Some(vec2(marble_size, marble_size)),
+                ..Default::default()
+            },
+        );
+    } else {
+        draw_invalid_placement_cross(cell_pos, cell_size, display);
+    }
+}
+
 fn draw_marble(
     game: &Game,
     textures: &GameTextures,
@@ -148,22 +229,28 @@ fn draw_marble(
     }
 }
 
-fn draw_selected_tile(tile_row: usize, tile_column: usize, board: Vec2, display: &DisplayContext) {
+fn draw_tile_highlight(
+    tile_row: usize,
+    tile_column: usize,
+    board: Vec2,
+    display: &DisplayContext,
+    color: Color,
+    thickness: f32,
+) {
     let tile_size = tile_size(display);
     let tile_gap = tile_gap(display);
 
-    let outline = 4.0 * display.scale;
-
     let x = board.x + tile_column as f32 * (tile_size + tile_gap);
+
     let y = board.y + tile_row as f32 * (tile_size + tile_gap);
 
     draw_rectangle_lines(
-        x - outline,
-        y - outline,
-        tile_size + outline * 2.0,
-        tile_size + outline * 2.0,
-        outline,
-        GOLD,
+        x - 2.0 * thickness,
+        y - 2.0 * thickness,
+        tile_size + thickness * 4.0,
+        tile_size + thickness * 4.0,
+        thickness,
+        color,
     );
 }
 
@@ -314,8 +401,31 @@ pub fn draw_game(
             draw_marble(game, textures, tile_row, tile_column, pos_x, pos_y, display);
         }
     }
-    if let Some((tile_row, tile_column)) = view_state.selected_tile {
-        draw_selected_tile(tile_row, tile_column, board, display);
-        draw_rotation_buttons(textures, display);
+    if game.state == TurnState::WaitingForRotation {
+        if let Some((tile_row, tile_column)) = view_state.selected_tile {
+            draw_tile_highlight(
+                tile_row,
+                tile_column,
+                board,
+                display,
+                GOLD,
+                4.0 * display.scale,
+            );
+
+            draw_rotation_buttons(textures, display);
+        } else if let Some((tile_row, tile_column)) = crate::ui::input::hovered_tile(display) {
+            draw_tile_highlight(
+                tile_row,
+                tile_column,
+                board,
+                display,
+                Color::from_rgba(180, 180, 180, 160),
+                3.0 * display.scale,
+            );
+        }
+    } else if game.state == TurnState::WaitingForPlacement
+        && let Some(placement) = crate::ui::input::hovered_placement(display)
+    {
+        draw_placement_preview(game, textures, &placement, display);
     }
 }
