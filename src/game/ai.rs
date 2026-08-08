@@ -1,7 +1,9 @@
 use super::{
-    Board, CellState, GameMove,
+    Board, CellState, GameMove, Placement, Rotation, TileRotation,
     rules::{apply_move, check_winner, legal_moves},
 };
+
+pub const ACTION_COUNT: usize = 36 * 4 * 2;
 
 fn evaluate_window(window: &[CellState], player: CellState) -> i32 {
     let opponent = match player {
@@ -140,6 +142,57 @@ pub fn choose_best_move(board: &Board, player: CellState) -> Option<GameMove> {
     }
 
     best_move
+}
+
+pub fn move_to_action_id(game_move: &GameMove) -> usize {
+    let global_row = game_move.placement.tile_row * 3 + game_move.placement.row;
+
+    let global_column = game_move.placement.tile_column * 3 + game_move.placement.column;
+
+    let cell = global_row * 6 + global_column;
+
+    let tile = game_move.rotation.tile_row * 2 + game_move.rotation.tile_column;
+
+    let rotation = match game_move.rotation.rotation_orientation {
+        TileRotation::CounterClockwise => 0,
+        TileRotation::Clockwise => 1,
+    };
+
+    cell * 8 + tile * 2 + rotation
+}
+
+pub fn action_id_to_move(action_id: usize) -> Option<GameMove> {
+    if action_id >= ACTION_COUNT {
+        return None;
+    }
+
+    let cell = action_id / 8;
+    let remainder = action_id % 8;
+
+    let tile = remainder / 2;
+    let rotation = remainder % 2;
+
+    let global_row = cell / 6;
+    let global_column = cell % 6;
+
+    Some(GameMove {
+        placement: Placement {
+            tile_row: global_row / 3,
+            tile_column: global_column / 3,
+            row: global_row % 3,
+            column: global_column % 3,
+        },
+
+        rotation: Rotation {
+            tile_row: tile / 2,
+            tile_column: tile % 2,
+            rotation_orientation: match rotation {
+                0 => TileRotation::CounterClockwise,
+                1 => TileRotation::Clockwise,
+                _ => unreachable!(),
+            },
+        },
+    })
 }
 
 #[cfg(test)]
@@ -286,5 +339,23 @@ mod tests {
         }
 
         assert!(evaluate_board(&board, CellState::White) > 0);
+    }
+
+    #[test]
+    fn action_encoding_round_trip() {
+        for action_id in 0..ACTION_COUNT {
+            let game_move = action_id_to_move(action_id).expect("action should be valid");
+
+            let encoded = move_to_action_id(&game_move);
+
+            assert_eq!(encoded, action_id);
+        }
+    }
+
+    #[test]
+    fn invalid_action_id_returns_none() {
+        assert!(action_id_to_move(ACTION_COUNT).is_none());
+
+        assert!(action_id_to_move(1000).is_none());
     }
 }

@@ -167,4 +167,83 @@ impl Game {
             _ => {} // No action needed for other states
         }
     }
+
+    pub fn play_move(&mut self, game_move: GameMove) -> Result<(), &'static str> {
+        if self.game_status != GameStatus::Ongoing {
+            return Err("Game is already over !");
+        }
+
+        if self.state != TurnState::WaitingForPlacement {
+            return Err("Game is not ready for a new move !");
+        }
+
+        self.place(game_move.placement)?;
+
+        if self.game_status != GameStatus::Ongoing {
+            return Ok(());
+        }
+
+        self.validate()?;
+
+        self.rotate(game_move.rotation)?;
+
+        if self.game_status != GameStatus::Ongoing {
+            return Ok(());
+        }
+
+        self.validate()?;
+
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::game::Placement;
+
+    #[test]
+    fn play_move_executes_complete_turn() {
+        let mut game = Game::new(GameMode::PlayerVsPlayer);
+
+        let game_move = GameMove {
+            placement: Placement {
+                tile_row: 0,
+                tile_column: 0,
+                row: 0,
+                column: 0,
+            },
+            rotation: Rotation {
+                tile_row: 0,
+                tile_column: 0,
+                rotation_orientation: TileRotation::Clockwise,
+            },
+        };
+
+        game.play_move(game_move).unwrap();
+
+        assert_eq!(game.current_player, CellState::Black);
+        assert_eq!(game.state, TurnState::WaitingForPlacement);
+    }
+
+    #[test]
+    fn play_move_rejects_occupied_cell() {
+        let mut game = Game::new(GameMode::PlayerVsPlayer);
+
+        let game_move = GameMove {
+            placement: Placement {
+                tile_row: 0,
+                tile_column: 0,
+                row: 0,
+                column: 0,
+            },
+            rotation: Rotation {
+                tile_row: 0,
+                tile_column: 0,
+                rotation_orientation: TileRotation::Clockwise,
+            },
+        };
+
+        game.play_move(game_move).unwrap();
+    }
 }
