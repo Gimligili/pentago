@@ -32,6 +32,13 @@ def main() -> None:
     print(f"Draws:  {result.draws}")
     print(f"Win rate: {result.win_rate * 100:.2f}%")
 
+    print()
+    print("By color")
+    print(f"Wins as White:   {result.wins_as_white}")
+    print(f"Losses as White: {result.losses_as_white}")
+    print(f"Wins as Black:   {result.wins_as_black}")
+    print(f"Losses as Black: {result.losses_as_black}")
+
 
 if __name__ == "__main__":
     main()

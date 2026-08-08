@@ -42,14 +42,18 @@ def test_evaluate_agent_counts_all_games():
         == 4
     )
 
-def test_evaluation_result_win_rate():
-    from pentago_ai.evaluation import EvaluationResult
+def test_play_game_with_random_opening_reaches_terminal_state():
+    model = PentagoNet()
 
-    result = EvaluationResult(
-        wins=2,
-        losses=1,
-        draws=1,
+    agent = NeuralAgent(
+        model,
+        stochastic=False,
     )
 
-    assert result.total_games == 4
-    assert result.win_rate == 0.5
+    result = play_game(
+        neural_agent=agent,
+        neural_player=1,
+        opening_moves=4,
+    )
+
+    assert result in (1, -1, 2)

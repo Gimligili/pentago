@@ -1,3 +1,4 @@
+import random
 from dataclasses import dataclass
 
 from pentago_ai import pentago_engine
@@ -29,7 +30,10 @@ class EvaluationResult:
 def evaluate_agent(
     neural_agent: NeuralAgent,
     num_games: int,
+    seed: int = 42,
 ) -> EvaluationResult:
+    random_src = random.Random(seed)
+
     wins = 0
     losses = 0
     draws = 0
@@ -42,9 +46,13 @@ def evaluate_agent(
     for game_index in range(num_games):
         neural_player = 1 if game_index % 2 == 0 else -1
 
+        opening_moves = random_src.randint(2, 6)
+
         result = play_game(
             neural_agent=neural_agent,
             neural_player=neural_player,
+            opening_moves=opening_moves,
+            random_src=random_src,
         )
 
         if result == 2:
@@ -79,8 +87,24 @@ def evaluate_agent(
 def play_game(
     neural_agent: NeuralAgent,
     neural_player: int,
+    opening_moves: int = 0,
+    random_src: random.Random | None = None,
 ) -> int:
+    if random_src is None:
+        random_src = random.Random()
+
     game = pentago_engine.PyGame()
+
+    for _ in range(opening_moves):
+        if game.game_status() != 0:
+            return game.game_status()
+
+        legal_actions = game.legal_actions()
+
+        if not legal_actions:
+            return game.game_status()
+
+        game.step(random_src.choice(legal_actions))
 
     while game.game_status() == 0:
         current_player = game.current_player()
