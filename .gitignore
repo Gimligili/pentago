@@ -1,1 +1,4 @@
 /target
+python/**/*.pyd
+python/**/*.pdb
+python/**/__pycache__
