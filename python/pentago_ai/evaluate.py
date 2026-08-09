@@ -39,6 +39,21 @@ def main() -> None:
     print(f"Wins as Black:   {result.wins_as_black}")
     print(f"Losses as Black: {result.losses_as_black}")
 
+    print()
+    print("Teacher agreement")
+    print(f"Agreement: {result.teacher_agreement * 100:.2f}%")
+    
+    if result.first_divergence_moves:
+        average_first_divergence = (
+            sum(result.first_divergence_moves)
+            / len(result.first_divergence_moves)
+        )
+    
+        print(
+            f"Average first divergence move: "
+            f"{average_first_divergence:.2f}"
+        )
+
 
 if __name__ == "__main__":
     main()

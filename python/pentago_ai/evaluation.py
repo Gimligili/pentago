@@ -16,6 +16,10 @@ class EvaluationResult:
     losses_as_white: int
     losses_as_black: int
 
+    compared_actions: int
+    matching_actions: int
+    first_divergence_moves: list[int]
+
     @property
     def total_games(self) -> int:
         return self.wins + self.losses + self.draws
@@ -26,6 +30,13 @@ class EvaluationResult:
             return 0.0
 
         return self.wins / self.total_games
+
+    @property
+    def teacher_agreement(self) -> float:
+        if self.compared_actions == 0:
+            return 0.0
+
+        return self.matching_actions / self.compared_actions
 
 def evaluate_agent(
     neural_agent: NeuralAgent,
@@ -43,17 +54,32 @@ def evaluate_agent(
     losses_as_white = 0
     losses_as_black = 0
 
+    compared_actions = 0
+    matching_actions = 0
+    first_divergence_moves = []
+
     for game_index in range(num_games):
         neural_player = 1 if game_index % 2 == 0 else -1
 
         opening_moves = random_src.randint(2, 6)
 
-        result = play_game(
+        (
+            result,
+            game_compared_actions,
+            game_matching_actions,
+            first_divergence_move,
+        ) = play_game(
             neural_agent=neural_agent,
             neural_player=neural_player,
             opening_moves=opening_moves,
-            random_src=random_src,
+            rng=random_src,
         )
+
+        compared_actions += game_compared_actions
+        matching_actions += game_matching_actions
+
+        if first_divergence_move is not None:
+            first_divergence_moves.append(first_divergence_move)
 
         if result == 2:
             draws += 1
@@ -82,41 +108,64 @@ def evaluate_agent(
         wins_as_black=wins_as_black,
         losses_as_white=losses_as_white,
         losses_as_black=losses_as_black,
+        compared_actions=compared_actions,
+        matching_actions=matching_actions,
+        first_divergence_moves=first_divergence_moves,
     )
 
 def play_game(
     neural_agent: NeuralAgent,
     neural_player: int,
     opening_moves: int = 0,
-    random_src: random.Random | None = None,
-) -> int:
-    if random_src is None:
-        random_src = random.Random()
+    rng: random.Random | None = None,
+) -> tuple[int, int, int, int | None]:
+    if rng is None:
+        rng = random.Random()
 
     game = pentago_engine.PyGame()
 
     for _ in range(opening_moves):
         if game.game_status() != 0:
-            return game.game_status()
+            return game.game_status(), 0, 0, None
 
         legal_actions = game.legal_actions()
 
         if not legal_actions:
-            return game.game_status()
+            return game.game_status(), 0, 0, None
 
-        game.step(random_src.choice(legal_actions))
+        game.step(rng.choice(legal_actions))
+
+    compared_actions = 0
+    matching_actions = 0
+    first_divergence_move = None
+    move_index = 0
 
     while game.game_status() == 0:
-        current_player = game.current_player()
+        move_index += 1
 
-        if current_player == neural_player:
-            action = neural_agent.choose_action(game)
+        teacher_action = game.teacher_action()
+        neural_action = neural_agent.choose_action(game)
+
+        if teacher_action is None:
+            break
+
+        compared_actions += 1
+
+        if teacher_action == neural_action:
+            matching_actions += 1
+        elif first_divergence_move is None:
+            first_divergence_move = move_index
+
+        if game.current_player() == neural_player:
+            action = neural_action
         else:
-            action = game.teacher_action()
-
-            if action is None:
-                break
+            action = teacher_action
 
         game.step(action)
 
-    return game.game_status()
+    return (
+        game.game_status(),
+        compared_actions,
+        matching_actions,
+        first_divergence_move,
+    )

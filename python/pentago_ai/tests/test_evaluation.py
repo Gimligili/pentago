@@ -10,7 +10,7 @@ def test_play_game_reaches_terminal_state():
         stochastic=False,
     )
 
-    result = play_game(
+    result, _, _, _ = play_game(
         neural_agent=agent,
         neural_player=1,
     )
@@ -50,10 +50,12 @@ def test_play_game_with_random_opening_reaches_terminal_state():
         stochastic=False,
     )
 
-    result = play_game(
-        neural_agent=agent,
-        neural_player=1,
-        opening_moves=4,
+    result, compared, matching, _ = play_game(
+    neural_agent=agent,
+    neural_player=1,
     )
 
     assert result in (1, -1, 2)
+    assert compared >= 0
+    assert matching >= 0
+    assert matching <= compared
